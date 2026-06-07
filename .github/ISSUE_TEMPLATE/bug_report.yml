@@ -1,0 +1,44 @@
+name: Bug report
+description: Report a reproducible problem with the construct library
+title: "fix: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for taking the time to report a bug.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What happened?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Provide a minimal CDK stack or test case that reproduces the issue.
+      render: ts
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Package version
+      placeholder: "@cdk-construct/library@0.0.0"
+    validations:
+      required: true
+  - type: input
+    id: cdk-version
+    attributes:
+      label: AWS CDK version
+      placeholder: "2.x"
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Node.js, package manager, OS, and any relevant AWS account or region context.
+    validations:
+      required: true

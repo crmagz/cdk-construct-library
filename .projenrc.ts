@@ -6,9 +6,12 @@ const project = new typescript.TypeScriptProject({
   description: 'AWS CDK construct library',
   authorName: 'Cristian Magana',
   authorEmail: '33166233+cristianmagana@users.noreply.github.com',
-  repository: 'git@github.com:crmagz/cdk-construct-library.git',
+  repository: 'https://github.com/crmagz/cdk-construct-library.git',
   defaultReleaseBranch: 'main',
   packageManager: javascript.NodePackageManager.NPM,
+  npmAccess: javascript.NpmAccess.PUBLIC,
+  npmProvenance: true,
+  npmTrustedPublishing: true,
 
   minNodeVersion: '20.0.0',
   workflowNodeVersion: '20.x',
@@ -314,11 +317,11 @@ project.tasks
   .tryFind('package')
   ?.exec('npm_config_cache=.npm-cache npm pack --pack-destination dist/js');
 
-project.package.setScript('lint', 'npx projen lint');
-project.package.setScript('format', 'npx projen format');
-project.package.setScript('format:check', 'npx projen format:check');
-project.package.setScript('clean', 'npx projen clean');
-project.package.setScript('deploy', 'npx projen deploy');
+project.package.setScript('lint', 'projen lint');
+project.package.setScript('format', 'projen format');
+project.package.setScript('format:check', 'projen format:check');
+project.package.setScript('clean', 'projen clean');
+project.package.setScript('deploy', 'projen deploy');
 
 project.package.file.patch(JsonPatch.add('/publishConfig', { access: 'public' }));
 

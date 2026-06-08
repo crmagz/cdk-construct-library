@@ -14,9 +14,10 @@ const project = new typescript.TypeScriptProject({
   npmTrustedPublishing: true,
 
   minNodeVersion: '20.0.0',
-  workflowNodeVersion: '20.x',
+  workflowNodeVersion: '24.16.0',
 
   projenrcTs: true,
+  projenVersion: '0.99.71',
   sampleCode: false,
   releaseToNpm: true,
   pullRequestTemplateContents: [
@@ -113,6 +114,7 @@ const project = new typescript.TypeScriptProject({
 });
 
 project.package.addField('type', 'module');
+project.package.addField('packageManager', 'npm@11.16.0');
 project.package.addField('exports', {
   '.': {
     types: './lib/index.d.ts',
@@ -324,6 +326,20 @@ project.package.setScript('clean', 'projen clean');
 project.package.setScript('deploy', 'projen deploy');
 
 project.package.file.patch(JsonPatch.add('/publishConfig', { access: 'public' }));
+project.package.file.patch(
+  JsonPatch.replace('/devEngines/packageManager', {
+    name: 'npm',
+    version: '11.16.0',
+    onFail: 'warn',
+  }),
+);
+
+project.github?.tryFindWorkflow('release')?.file?.patch(
+  JsonPatch.add('/jobs/release_npm/steps/1', {
+    name: 'Upgrade npm for trusted publishing',
+    run: 'npm install -g npm@11.16.0\nnpm --version',
+  }),
+);
 
 project.defaultTask?.reset('node --loader ts-node/esm .projenrc.ts');
 

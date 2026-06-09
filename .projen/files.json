@@ -21,6 +21,7 @@
     "LICENSE",
     "packages/aurora/tsconfig.json",
     "packages/core/tsconfig.json",
+    "packages/s3/tsconfig.json",
     "tsconfig.dev.json",
     "tsconfig.json"
   ],

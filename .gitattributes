@@ -29,5 +29,7 @@
 /packages/aurora/tsconfig.json linguist-generated
 /packages/core/package.json linguist-generated
 /packages/core/tsconfig.json linguist-generated
+/packages/s3/package.json linguist-generated
+/packages/s3/tsconfig.json linguist-generated
 /tsconfig.dev.json linguist-generated linguist-language=JSON-with-Comments
 /tsconfig.json linguist-generated linguist-language=JSON-with-Comments

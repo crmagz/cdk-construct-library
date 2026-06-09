@@ -128,9 +128,10 @@ project.package.addField('exports', {
 project.package.addField('sideEffects', false);
 
 new JsonFile(project, 'packages/core/package.json', {
+  readonly: false,
   obj: {
     name: corePackageName,
-    version: '0.0.1',
+    version: '0.0.0',
     description: 'Core utilities and shared types for paved-road AWS CDK constructs',
     repository: {
       type: 'git',
@@ -440,7 +441,7 @@ project.package.file.patch(
 for (const taskName of ['bump', 'unbump']) {
   const task = project.tasks.tryFind(taskName);
   task?.env('OUTFILE', 'packages/core/package.json');
-  task?.env('RELEASE_TAG_PREFIX', 'core/v');
+  task?.env('RELEASE_TAG_PREFIX', 'core/');
 }
 
 project.github?.tryFindWorkflow('release')?.file?.patch(

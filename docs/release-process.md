@@ -30,5 +30,8 @@ The first workspace release publishes `@cdk-construct/core` and creates a
 ## Current Release Target
 
 The generated release workflow currently packages `@cdk-construct/core` only.
+The core release trigger is scoped to commits that affect `packages/core`.
+
 New service packages should be bootstrapped and configured in npm before they are
-added to the publish artifact set.
+added to the publish artifact set. Each package should get its own tag prefix and
+release target when it is ready to publish.

@@ -1,11 +1,11 @@
 {
-  "name": "@cdk-construct/core",
+  "name": "@cdk-construct/aurora",
   "version": "0.0.0",
-  "description": "Core utilities and shared types for paved-road AWS CDK constructs",
+  "description": "Aurora PostgreSQL and MySQL constructs for AWS CDK",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/crmagz/cdk-construct-library.git",
-    "directory": "packages/core"
+    "directory": "packages/aurora"
   },
   "author": {
     "name": "crmagz",
@@ -46,7 +46,8 @@
     "aws-cdk",
     "cdk",
     "constructs",
-    "core",
+    "aurora",
+    "rds",
     "typescript",
     "esm"
   ],

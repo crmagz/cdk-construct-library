@@ -9,9 +9,10 @@ Prettier, and ESM package metadata.
 
 ## Packages
 
-| Package               | Purpose                                         |
-| --------------------- | ----------------------------------------------- |
-| `@cdk-construct/core` | Shared foundation for future service constructs |
+| Package                 | Purpose                                         |
+| ----------------------- | ----------------------------------------------- |
+| `@cdk-construct/core`   | Shared foundation for future service constructs |
+| `@cdk-construct/aurora` | Aurora PostgreSQL and MySQL constructs          |
 
 ## Install
 
@@ -39,3 +40,6 @@ verbose manual notes.
 
 `npm run deploy` builds the package and publishes the generated tarball from
 `dist/js` to NPM.
+
+See [NPM Publishing](docs/npm-publishing.md) for first-publish and trusted
+publishing setup.

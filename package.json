@@ -3,7 +3,7 @@
   "description": "AWS CDK construct library",
   "repository": {
     "type": "git",
-    "url": "https://github.com/crmagz/cdk-construct-library.git"
+    "url": "git+https://github.com/crmagz/cdk-construct-library.git"
   },
   "scripts": {
     "build": "projen build",

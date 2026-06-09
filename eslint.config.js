@@ -19,7 +19,7 @@ const config = gts.map((entry) => {
 
 export default [
   {
-    ignores: ['lib/**', 'dist/**', 'coverage/**', 'test-reports/**', 'node_modules/**'],
+    ignores: ['lib/**', 'packages/*/lib/**', 'dist/**', 'coverage/**', 'test-reports/**', 'node_modules/**'],
   },
   ...config,
 ];

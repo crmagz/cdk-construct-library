@@ -1,11 +1,13 @@
-import { JsonPatch, TextFile, javascript, typescript } from 'projen';
+import { JsonFile, JsonPatch, TextFile, javascript, typescript } from 'projen';
+
+const corePackageName = '@cdk-construct/core';
 
 const project = new typescript.TypeScriptProject({
   name: '@cdk-construct/library',
   packageName: '@cdk-construct/library',
   description: 'AWS CDK construct library',
-  authorName: 'Cristian Magana',
-  authorEmail: '33166233+cristianmagana@users.noreply.github.com',
+  authorName: 'crmagz',
+  authorEmail: '33166233+crmagz@users.noreply.github.com',
   repository: 'https://github.com/crmagz/cdk-construct-library.git',
   defaultReleaseBranch: 'main',
   packageManager: javascript.NodePackageManager.NPM,
@@ -109,10 +111,12 @@ const project = new typescript.TypeScriptProject({
     },
   },
   tsconfigDev: {
-    include: ['src/**/*.ts', 'test/**/*.ts', '.projenrc.ts'],
+    include: ['packages/*/src/**/*.ts', 'packages/*/test/**/*.ts', '.projenrc.ts'],
   },
 });
 
+project.package.addField('private', true);
+project.package.addField('workspaces', ['packages/*']);
 project.package.addField('type', 'module');
 project.package.addField('packageManager', 'npm@11.16.0');
 project.package.addField('exports', {
@@ -122,6 +126,94 @@ project.package.addField('exports', {
   },
 });
 project.package.addField('sideEffects', false);
+
+new JsonFile(project, 'packages/core/package.json', {
+  obj: {
+    name: corePackageName,
+    version: '0.0.1',
+    description: 'Core utilities and shared types for paved-road AWS CDK constructs',
+    repository: {
+      type: 'git',
+      url: 'https://github.com/crmagz/cdk-construct-library.git',
+      directory: 'packages/core',
+    },
+    author: {
+      name: 'crmagz',
+      email: '33166233+crmagz@users.noreply.github.com',
+    },
+    license: 'Apache-2.0',
+    type: 'module',
+    main: 'lib/index.js',
+    types: 'lib/index.d.ts',
+    exports: {
+      '.': {
+        types: './lib/index.d.ts',
+        import: './lib/index.js',
+      },
+    },
+    files: ['lib', 'README.md'],
+    sideEffects: false,
+    publishConfig: {
+      access: 'public',
+    },
+    scripts: {
+      build: 'tsc -p tsconfig.json',
+      clean: 'rm -rf lib tsconfig.tsbuildinfo',
+      package: 'npm pack --pack-destination ../../dist/js',
+    },
+    peerDependencies: {
+      'aws-cdk-lib': '^2.236.0',
+      constructs: '^10.4.0',
+    },
+    devDependencies: {
+      'aws-cdk-lib': '2.236.0',
+      constructs: '10.4.0',
+    },
+    keywords: ['aws-cdk', 'cdk', 'constructs', 'core', 'typescript', 'esm'],
+    engines: {
+      node: '>= 20.0.0',
+    },
+    packageManager: 'npm@11.16.0',
+  },
+});
+
+new JsonFile(project, 'packages/core/tsconfig.json', {
+  obj: {
+    compilerOptions: {
+      rootDir: 'src',
+      outDir: 'lib',
+      alwaysStrict: true,
+      declaration: true,
+      declarationMap: true,
+      esModuleInterop: true,
+      experimentalDecorators: true,
+      forceConsistentCasingInFileNames: true,
+      inlineSourceMap: true,
+      inlineSources: true,
+      lib: ['ES2022'],
+      module: 'NodeNext',
+      moduleResolution: 'NodeNext',
+      noEmitOnError: false,
+      noFallthroughCasesInSwitch: true,
+      noImplicitAny: true,
+      noImplicitReturns: true,
+      noImplicitThis: true,
+      noUnusedLocals: true,
+      noUnusedParameters: true,
+      resolveJsonModule: true,
+      skipLibCheck: true,
+      strict: true,
+      strictNullChecks: true,
+      strictPropertyInitialization: true,
+      stripInternal: true,
+      target: 'ES2022',
+      types: ['node'],
+      verbatimModuleSyntax: true,
+    },
+    include: ['src/**/*.ts'],
+    exclude: ['lib', 'node_modules'],
+  },
+});
 
 new TextFile(project, '.github/release.yml', {
   lines: [
@@ -278,7 +370,7 @@ new TextFile(project, 'eslint.config.js', {
     '',
     'export default [',
     '  {',
-    "    ignores: ['lib/**', 'dist/**', 'coverage/**', 'test-reports/**', 'node_modules/**'],",
+    "    ignores: ['lib/**', 'packages/*/lib/**', 'dist/**', 'coverage/**', 'test-reports/**', 'node_modules/**'],",
     '  },',
     '  ...config,',
     '];',
@@ -288,22 +380,22 @@ new TextFile(project, 'eslint.config.js', {
 
 project.addTask('lint', {
   description: 'Lint TypeScript sources',
-  exec: 'eslint src test .projenrc.ts --fix --no-error-on-unmatched-pattern',
+  exec: 'eslint "packages/*/src/**/*.ts" "packages/*/test/**/*.ts" .projenrc.ts --fix --no-error-on-unmatched-pattern',
 });
 
 project.addTask('format', {
   description: 'Format source files with Prettier and ESLint fixes',
-  exec: 'prettier --write --no-error-on-unmatched-pattern README.md .projenrc.ts eslint.config.js "src/**/*.ts" "test/**/*.ts" && eslint src test .projenrc.ts --fix --no-error-on-unmatched-pattern',
+  exec: 'prettier --write --no-error-on-unmatched-pattern README.md "docs/**/*.md" "packages/*/README.md" .projenrc.ts eslint.config.js "packages/*/src/**/*.ts" "packages/*/test/**/*.ts" && eslint "packages/*/src/**/*.ts" "packages/*/test/**/*.ts" .projenrc.ts --fix --no-error-on-unmatched-pattern',
 });
 
 project.addTask('format:check', {
   description: 'Check source formatting with Prettier',
-  exec: 'prettier --check --no-error-on-unmatched-pattern README.md .projenrc.ts eslint.config.js "src/**/*.ts" "test/**/*.ts"',
+  exec: 'prettier --check --no-error-on-unmatched-pattern README.md "docs/**/*.md" "packages/*/README.md" .projenrc.ts eslint.config.js "packages/*/src/**/*.ts" "packages/*/test/**/*.ts"',
 });
 
 project.addTask('clean', {
   description: 'Remove generated build artifacts',
-  exec: 'rm -rf lib dist coverage test-reports .jsii .npm-cache tsconfig.tsbuildinfo',
+  exec: 'rm -rf lib packages/*/lib dist coverage test-reports .jsii .npm-cache tsconfig.tsbuildinfo packages/*/tsconfig.tsbuildinfo',
 });
 
 project.addTask('deploy', {
@@ -311,19 +403,30 @@ project.addTask('deploy', {
   exec: 'npm run build && npm publish dist/js/*.tgz --access public',
 });
 
-project.gitignore.addPatterns('/.npm-cache/');
+project.gitignore.addPatterns('/.npm-cache/', '/packages/*/lib/');
 project.addPackageIgnore('/.npm-cache/');
 project.addPackageIgnore('/eslint.config.js');
 project.tasks.tryFind('package')?.reset('mkdir -p dist/js');
 project.tasks
   .tryFind('package')
-  ?.exec('npm_config_cache=.npm-cache npm pack --pack-destination dist/js');
+  ?.exec(
+    `npm_config_cache=.npm-cache npm pack --workspace ${corePackageName} --pack-destination dist/js`,
+  );
+
+project.tasks.tryFind('compile')?.reset('tsc -p packages/core/tsconfig.json');
 
 project.package.setScript('lint', 'projen lint');
 project.package.setScript('format', 'projen format');
 project.package.setScript('format:check', 'projen format:check');
 project.package.setScript('clean', 'projen clean');
 project.package.setScript('deploy', 'projen deploy');
+
+project.package.file.patch(
+  JsonPatch.replace('/jest/testMatch', [
+    '<rootDir>/packages/*/@(src|test)/**/*(*.)@(spec|test).ts?(x)',
+    '<rootDir>/packages/*/@(src|test)/**/__tests__/**/*.ts?(x)',
+  ]),
+);
 
 project.package.file.patch(JsonPatch.add('/publishConfig', { access: 'public' }));
 project.package.file.patch(
@@ -333,6 +436,12 @@ project.package.file.patch(
     onFail: 'warn',
   }),
 );
+
+for (const taskName of ['bump', 'unbump']) {
+  const task = project.tasks.tryFind(taskName);
+  task?.env('OUTFILE', 'packages/core/package.json');
+  task?.env('RELEASE_TAG_PREFIX', 'core/v');
+}
 
 project.github?.tryFindWorkflow('release')?.file?.patch(
   JsonPatch.add('/jobs/release_npm/steps/1', {

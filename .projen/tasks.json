@@ -28,11 +28,11 @@
       "name": "bump",
       "description": "Bumps version based on latest git tag and generates a changelog entry",
       "env": {
-        "OUTFILE": "package.json",
+        "OUTFILE": "packages/core/package.json",
         "CHANGELOG": "dist/changelog.md",
         "BUMPFILE": "dist/version.txt",
         "RELEASETAG": "dist/releasetag.txt",
-        "RELEASE_TAG_PREFIX": "",
+        "RELEASE_TAG_PREFIX": "core/v",
         "BUMP_PACKAGE": "commit-and-tag-version@^12"
       },
       "steps": [
@@ -47,7 +47,7 @@
       "description": "Remove generated build artifacts",
       "steps": [
         {
-          "exec": "rm -rf lib dist coverage test-reports .jsii .npm-cache tsconfig.tsbuildinfo"
+          "exec": "rm -rf lib packages/*/lib dist coverage test-reports .jsii .npm-cache tsconfig.tsbuildinfo packages/*/tsconfig.tsbuildinfo"
         }
       ]
     },
@@ -88,7 +88,7 @@
       "description": "Only compile",
       "steps": [
         {
-          "exec": "tsc --build"
+          "exec": "tsc -p packages/core/tsconfig.json"
         }
       ]
     },
@@ -127,7 +127,7 @@
       "description": "Format source files with Prettier and ESLint fixes",
       "steps": [
         {
-          "exec": "prettier --write --no-error-on-unmatched-pattern README.md .projenrc.ts eslint.config.js \"src/**/*.ts\" \"test/**/*.ts\" && eslint src test .projenrc.ts --fix --no-error-on-unmatched-pattern"
+          "exec": "prettier --write --no-error-on-unmatched-pattern README.md \"docs/**/*.md\" \"packages/*/README.md\" .projenrc.ts eslint.config.js \"packages/*/src/**/*.ts\" \"packages/*/test/**/*.ts\" && eslint \"packages/*/src/**/*.ts\" \"packages/*/test/**/*.ts\" .projenrc.ts --fix --no-error-on-unmatched-pattern"
         }
       ]
     },
@@ -136,7 +136,7 @@
       "description": "Check source formatting with Prettier",
       "steps": [
         {
-          "exec": "prettier --check --no-error-on-unmatched-pattern README.md .projenrc.ts eslint.config.js \"src/**/*.ts\" \"test/**/*.ts\""
+          "exec": "prettier --check --no-error-on-unmatched-pattern README.md \"docs/**/*.md\" \"packages/*/README.md\" .projenrc.ts eslint.config.js \"packages/*/src/**/*.ts\" \"packages/*/test/**/*.ts\""
         }
       ]
     },
@@ -163,7 +163,7 @@
       "description": "Lint TypeScript sources",
       "steps": [
         {
-          "exec": "eslint src test .projenrc.ts --fix --no-error-on-unmatched-pattern"
+          "exec": "eslint \"packages/*/src/**/*.ts\" \"packages/*/test/**/*.ts\" .projenrc.ts --fix --no-error-on-unmatched-pattern"
         }
       ]
     },
@@ -175,7 +175,7 @@
           "exec": "mkdir -p dist/js"
         },
         {
-          "exec": "npm_config_cache=.npm-cache npm pack --pack-destination dist/js"
+          "exec": "npm_config_cache=.npm-cache npm pack --workspace @cdk-construct/core --pack-destination dist/js"
         }
       ]
     },
@@ -238,11 +238,11 @@
       "name": "unbump",
       "description": "Restores version to 0.0.0",
       "env": {
-        "OUTFILE": "package.json",
+        "OUTFILE": "packages/core/package.json",
         "CHANGELOG": "dist/changelog.md",
         "BUMPFILE": "dist/version.txt",
         "RELEASETAG": "dist/releasetag.txt",
-        "RELEASE_TAG_PREFIX": "",
+        "RELEASE_TAG_PREFIX": "core/v",
         "BUMP_PACKAGE": "commit-and-tag-version@^12"
       },
       "steps": [

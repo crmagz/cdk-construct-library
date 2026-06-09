@@ -1,24 +1,33 @@
 # CDK Construct Library
 
-`@cdk-construct/library` is the foundation for paved-road AWS CDK constructs:
-opinionated building blocks that make the common path easy while keeping
-advanced configuration available through explicit escape hatches.
+This repository is the `@cdk-construct` monorepo for paved-road AWS CDK
+constructs: opinionated building blocks that make the common path easy while
+keeping advanced configuration available through explicit escape hatches.
 
-The library is built with projen, TypeScript 5.9.3, ESLint, GTS, Prettier, and
-ESM package metadata.
+The project is built with projen, npm workspaces, TypeScript 5.9.3, ESLint, GTS,
+Prettier, and ESM package metadata.
+
+## Packages
+
+| Package               | Purpose                                         |
+| --------------------- | ----------------------------------------------- |
+| `@cdk-construct/core` | Shared foundation for future service constructs |
 
 ## Install
 
 ```sh
-npm install @cdk-construct/library
+npm install @cdk-construct/core
 ```
 
 ## Project Status
 
-This initial package establishes the publishing, formatting, linting, and build
-foundation for the construct library. The project goal is to provide constructs
-with safe defaults, environment-aware cost controls, and opt-in overrides for
-teams that need to step outside the paved path.
+The first workspace release focuses on `@cdk-construct/core`. Service packages
+will be added independently as the public APIs settle, with package-specific
+versions, tags, and release notes.
+
+Releases are curated from conventional commits. Package-scoped commits such as
+`feat(core): add environment helpers` tell the release story without requiring
+verbose manual notes.
 
 ## Commands
 

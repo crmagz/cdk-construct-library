@@ -48,10 +48,13 @@ junit.xml
 !/src/
 /lib
 /dist/
+!/packages/core/package.json
+!/packages/core/tsconfig.json
 !/.github/release.yml
 !/.github/ISSUE_TEMPLATE/bug_report.yml
 !/.github/ISSUE_TEMPLATE/feature_request.yml
 !/.github/ISSUE_TEMPLATE/config.yml
 !/eslint.config.js
 /.npm-cache/
+/packages/*/lib/
 !/.projenrc.ts

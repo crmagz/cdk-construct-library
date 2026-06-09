@@ -1,6 +1,8 @@
 import { JsonFile, JsonPatch, TextFile, javascript, typescript } from 'projen';
 
 const corePackageName = '@cdk-construct/core';
+const auroraPackageName = '@cdk-construct/aurora';
+const repositoryUrl = 'git+https://github.com/crmagz/cdk-construct-library.git';
 
 const project = new typescript.TypeScriptProject({
   name: '@cdk-construct/library',
@@ -8,7 +10,7 @@ const project = new typescript.TypeScriptProject({
   description: 'AWS CDK construct library',
   authorName: 'crmagz',
   authorEmail: '33166233+crmagz@users.noreply.github.com',
-  repository: 'https://github.com/crmagz/cdk-construct-library.git',
+  repository: repositoryUrl,
   defaultReleaseBranch: 'main',
   packageManager: javascript.NodePackageManager.NPM,
   npmAccess: javascript.NpmAccess.PUBLIC,
@@ -135,7 +137,7 @@ new JsonFile(project, 'packages/core/package.json', {
     description: 'Core utilities and shared types for paved-road AWS CDK constructs',
     repository: {
       type: 'git',
-      url: 'https://github.com/crmagz/cdk-construct-library.git',
+      url: repositoryUrl,
       directory: 'packages/core',
     },
     author: {
@@ -179,6 +181,95 @@ new JsonFile(project, 'packages/core/package.json', {
 });
 
 new JsonFile(project, 'packages/core/tsconfig.json', {
+  obj: {
+    compilerOptions: {
+      rootDir: 'src',
+      outDir: 'lib',
+      alwaysStrict: true,
+      declaration: true,
+      declarationMap: true,
+      esModuleInterop: true,
+      experimentalDecorators: true,
+      forceConsistentCasingInFileNames: true,
+      inlineSourceMap: true,
+      inlineSources: true,
+      lib: ['ES2022'],
+      module: 'NodeNext',
+      moduleResolution: 'NodeNext',
+      noEmitOnError: false,
+      noFallthroughCasesInSwitch: true,
+      noImplicitAny: true,
+      noImplicitReturns: true,
+      noImplicitThis: true,
+      noUnusedLocals: true,
+      noUnusedParameters: true,
+      resolveJsonModule: true,
+      skipLibCheck: true,
+      strict: true,
+      strictNullChecks: true,
+      strictPropertyInitialization: true,
+      stripInternal: true,
+      target: 'ES2022',
+      types: ['node'],
+      verbatimModuleSyntax: true,
+    },
+    include: ['src/**/*.ts'],
+    exclude: ['lib', 'node_modules'],
+  },
+});
+
+new JsonFile(project, 'packages/aurora/package.json', {
+  readonly: false,
+  obj: {
+    name: auroraPackageName,
+    version: '0.0.0',
+    description: 'Aurora PostgreSQL and MySQL constructs for AWS CDK',
+    repository: {
+      type: 'git',
+      url: repositoryUrl,
+      directory: 'packages/aurora',
+    },
+    author: {
+      name: 'crmagz',
+      email: '33166233+crmagz@users.noreply.github.com',
+    },
+    license: 'Apache-2.0',
+    type: 'module',
+    main: 'lib/index.js',
+    types: 'lib/index.d.ts',
+    exports: {
+      '.': {
+        types: './lib/index.d.ts',
+        import: './lib/index.js',
+      },
+    },
+    files: ['lib', 'README.md'],
+    sideEffects: false,
+    publishConfig: {
+      access: 'public',
+    },
+    scripts: {
+      build: 'tsc -p tsconfig.json',
+      clean: 'rm -rf lib tsconfig.tsbuildinfo',
+      package: 'npm pack --pack-destination ../../dist/js',
+    },
+    peerDependencies: {
+      'aws-cdk-lib': '^2.236.0',
+      constructs: '^10.4.0',
+    },
+    devDependencies: {
+      'aws-cdk-lib': '2.236.0',
+      constructs: '10.4.0',
+    },
+    keywords: ['aws-cdk', 'cdk', 'constructs', 'aurora', 'rds', 'typescript', 'esm'],
+    engines: {
+      node: '>= 20.0.0',
+    },
+    packageManager: 'npm@11.16.0',
+  },
+});
+
+new JsonFile(project, 'packages/aurora/tsconfig.json', {
   obj: {
     compilerOptions: {
       rootDir: 'src',
@@ -414,7 +505,7 @@ project.tasks
     `npm_config_cache=.npm-cache npm pack --workspace ${corePackageName} --pack-destination dist/js`,
   );
 
-project.tasks.tryFind('compile')?.reset('tsc -p packages/core/tsconfig.json');
+project.tasks.tryFind('compile')?.reset('npm run build --workspaces --if-present');
 
 project.package.setScript('lint', 'projen lint');
 project.package.setScript('format', 'projen format');

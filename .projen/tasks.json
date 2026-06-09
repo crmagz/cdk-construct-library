@@ -88,7 +88,7 @@
       "description": "Only compile",
       "steps": [
         {
-          "exec": "tsc -p packages/core/tsconfig.json"
+          "exec": "npm run build --workspaces --if-present"
         }
       ]
     },

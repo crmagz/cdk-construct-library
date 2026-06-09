@@ -50,6 +50,8 @@ junit.xml
 /dist/
 !/packages/core/package.json
 !/packages/core/tsconfig.json
+!/packages/aurora/package.json
+!/packages/aurora/tsconfig.json
 !/.github/release.yml
 !/.github/ISSUE_TEMPLATE/bug_report.yml
 !/.github/ISSUE_TEMPLATE/feature_request.yml

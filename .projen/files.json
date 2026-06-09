@@ -19,6 +19,7 @@
     ".projen/files.json",
     ".projen/tasks.json",
     "LICENSE",
+    "packages/aurora/tsconfig.json",
     "packages/core/tsconfig.json",
     "tsconfig.dev.json",
     "tsconfig.json"

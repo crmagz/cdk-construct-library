@@ -5,6 +5,7 @@ import { JsonFile, JsonPatch, TextFile, javascript, typescript } from 'projen';
 const corePackageName = '@cdk-construct/core';
 const auroraPackageName = '@cdk-construct/aurora';
 const s3PackageName = '@cdk-construct/s3';
+const sqsPackageName = '@cdk-construct/sqs';
 const repositoryUrl = 'git+https://github.com/crmagz/cdk-construct-library.git';
 const nodeVersion = '24.16.0';
 const npmVersion = '11.16.0';
@@ -59,6 +60,11 @@ const workspacePackages = [
     service: 's3',
     packageName: s3PackageName,
     path: 'packages/s3',
+  },
+  {
+    service: 'sqs',
+    packageName: sqsPackageName,
+    path: 'packages/sqs',
   },
 ];
 
@@ -432,6 +438,98 @@ new JsonFile(project, 'packages/s3/package.json', {
 });
 
 new JsonFile(project, 'packages/s3/tsconfig.json', {
+  obj: {
+    compilerOptions: {
+      rootDir: 'src',
+      outDir: 'lib',
+      alwaysStrict: true,
+      declaration: true,
+      declarationMap: true,
+      esModuleInterop: true,
+      experimentalDecorators: true,
+      forceConsistentCasingInFileNames: true,
+      inlineSourceMap: true,
+      inlineSources: true,
+      lib: ['ES2022'],
+      module: 'NodeNext',
+      moduleResolution: 'NodeNext',
+      noEmitOnError: false,
+      noFallthroughCasesInSwitch: true,
+      noImplicitAny: true,
+      noImplicitReturns: true,
+      noImplicitThis: true,
+      noUnusedLocals: true,
+      noUnusedParameters: true,
+      resolveJsonModule: true,
+      skipLibCheck: true,
+      strict: true,
+      strictNullChecks: true,
+      strictPropertyInitialization: true,
+      stripInternal: true,
+      target: 'ES2022',
+      types: ['node'],
+      verbatimModuleSyntax: true,
+    },
+    include: ['src/**/*.ts'],
+    exclude: ['lib', 'node_modules'],
+  },
+});
+
+new JsonFile(project, 'packages/sqs/package.json', {
+  readonly: false,
+  obj: {
+    name: sqsPackageName,
+    version: packageVersion('packages/sqs/package.json'),
+    description: 'SQS queue constructs for AWS CDK',
+    repository: {
+      type: 'git',
+      url: repositoryUrl,
+      directory: 'packages/sqs',
+    },
+    author: {
+      name: 'crmagz',
+      email: '33166233+crmagz@users.noreply.github.com',
+    },
+    license: 'Apache-2.0',
+    type: 'module',
+    main: 'lib/index.js',
+    types: 'lib/index.d.ts',
+    exports: {
+      '.': {
+        types: './lib/index.d.ts',
+        import: './lib/index.js',
+      },
+    },
+    files: ['lib', 'README.md', 'docs'],
+    sideEffects: false,
+    publishConfig: {
+      access: 'public',
+    },
+    scripts: {
+      build: 'tsc -p tsconfig.json',
+      clean: 'rm -rf lib tsconfig.tsbuildinfo',
+      package: 'npm pack --pack-destination ../../dist/js',
+    },
+    dependencies: {
+      [corePackageName]: `^${packageVersion('packages/core/package.json')}`,
+    },
+    peerDependencies: {
+      'aws-cdk-lib': awsCdkLibPeerVersion,
+      constructs: constructsPeerVersion,
+    },
+    devDependencies: {
+      'aws-cdk-lib': awsCdkLibVersion,
+      constructs: constructsVersion,
+    },
+    keywords: ['aws-cdk', 'cdk', 'constructs', 'sqs', 'queue', 'messaging', 'typescript', 'esm'],
+    engines: {
+      node: '>= 20.0.0',
+    },
+    packageManager: `npm@${npmVersion}`,
+  },
+});
+
+new JsonFile(project, 'packages/sqs/tsconfig.json', {
   obj: {
     compilerOptions: {
       rootDir: 'src',

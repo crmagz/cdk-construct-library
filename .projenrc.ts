@@ -1,4 +1,4 @@
-import { JsonFile, JsonPatch, TextFile, javascript, typescript } from 'projen';
+import { JsonFile, JsonPatch, ReleasableCommits, TextFile, javascript, typescript } from 'projen';
 
 const corePackageName = '@cdk-construct/core';
 const auroraPackageName = '@cdk-construct/aurora';
@@ -24,6 +24,7 @@ const project = new typescript.TypeScriptProject({
   projenVersion: '0.99.71',
   sampleCode: false,
   releaseToNpm: true,
+  releasableCommits: ReleasableCommits.everyCommit('packages/core'),
   pullRequestTemplateContents: [
     '<!--',
     'PR Title Format: <type>(<scope>): <description>',

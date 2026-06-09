@@ -26,3 +26,9 @@ aurora/v0.1.0
 
 The first workspace release publishes `@cdk-construct/core` and creates a
 `core/v...` tag.
+
+## Current Release Target
+
+The generated release workflow currently packages `@cdk-construct/core` only.
+New service packages should be bootstrapped and configured in npm before they are
+added to the publish artifact set.

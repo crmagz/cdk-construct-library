@@ -52,6 +52,8 @@ junit.xml
 !/packages/core/tsconfig.json
 !/packages/aurora/package.json
 !/packages/aurora/tsconfig.json
+!/packages/bedrock/package.json
+!/packages/bedrock/tsconfig.json
 !/.github/release.yml
 !/.github/ISSUE_TEMPLATE/bug_report.yml
 !/.github/ISSUE_TEMPLATE/feature_request.yml

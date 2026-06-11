@@ -20,6 +20,7 @@
     ".projen/tasks.json",
     "LICENSE",
     "packages/aurora/tsconfig.json",
+    "packages/bedrock/tsconfig.json",
     "packages/core/tsconfig.json",
     "tsconfig.dev.json",
     "tsconfig.json"

@@ -2,6 +2,7 @@ import { JsonFile, JsonPatch, ReleasableCommits, TextFile, javascript, typescrip
 
 const corePackageName = '@cdk-construct/core';
 const auroraPackageName = '@cdk-construct/aurora';
+const bedrockPackageName = '@cdk-construct/bedrock';
 const repositoryUrl = 'git+https://github.com/crmagz/cdk-construct-library.git';
 
 const project = new typescript.TypeScriptProject({
@@ -271,6 +272,95 @@ new JsonFile(project, 'packages/aurora/package.json', {
 });
 
 new JsonFile(project, 'packages/aurora/tsconfig.json', {
+  obj: {
+    compilerOptions: {
+      rootDir: 'src',
+      outDir: 'lib',
+      alwaysStrict: true,
+      declaration: true,
+      declarationMap: true,
+      esModuleInterop: true,
+      experimentalDecorators: true,
+      forceConsistentCasingInFileNames: true,
+      inlineSourceMap: true,
+      inlineSources: true,
+      lib: ['ES2022'],
+      module: 'NodeNext',
+      moduleResolution: 'NodeNext',
+      noEmitOnError: false,
+      noFallthroughCasesInSwitch: true,
+      noImplicitAny: true,
+      noImplicitReturns: true,
+      noImplicitThis: true,
+      noUnusedLocals: true,
+      noUnusedParameters: true,
+      resolveJsonModule: true,
+      skipLibCheck: true,
+      strict: true,
+      strictNullChecks: true,
+      strictPropertyInitialization: true,
+      stripInternal: true,
+      target: 'ES2022',
+      types: ['node'],
+      verbatimModuleSyntax: true,
+    },
+    include: ['src/**/*.ts'],
+    exclude: ['lib', 'node_modules'],
+  },
+});
+
+new JsonFile(project, 'packages/bedrock/package.json', {
+  readonly: false,
+  obj: {
+    name: bedrockPackageName,
+    version: '0.0.0',
+    description: 'Bedrock constructs for AWS CDK',
+    repository: {
+      type: 'git',
+      url: repositoryUrl,
+      directory: 'packages/bedrock',
+    },
+    author: {
+      name: 'crmagz',
+      email: '33166233+crmagz@users.noreply.github.com',
+    },
+    license: 'Apache-2.0',
+    type: 'module',
+    main: 'lib/index.js',
+    types: 'lib/index.d.ts',
+    exports: {
+      '.': {
+        types: './lib/index.d.ts',
+        import: './lib/index.js',
+      },
+    },
+    files: ['lib', 'README.md'],
+    sideEffects: false,
+    publishConfig: {
+      access: 'public',
+    },
+    scripts: {
+      build: 'tsc -p tsconfig.json',
+      clean: 'rm -rf lib tsconfig.tsbuildinfo',
+      package: 'npm pack --pack-destination ../../dist/js',
+    },
+    peerDependencies: {
+      'aws-cdk-lib': '^2.236.0',
+      constructs: '^10.4.0',
+    },
+    devDependencies: {
+      'aws-cdk-lib': '2.236.0',
+      constructs: '10.4.0',
+    },
+    keywords: ['aws-cdk', 'cdk', 'constructs', 'bedrock', 'ai', 'genai', 'typescript', 'esm'],
+    engines: {
+      node: '>= 20.0.0',
+    },
+    packageManager: 'npm@11.16.0',
+  },
+});
+
+new JsonFile(project, 'packages/bedrock/tsconfig.json', {
   obj: {
     compilerOptions: {
       rootDir: 'src',

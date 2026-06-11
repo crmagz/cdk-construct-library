@@ -633,6 +633,83 @@ project.github?.tryFindWorkflow('release')?.file?.patch(
   }),
 );
 
+project.github?.tryFindWorkflow('release')?.file?.patch(
+  JsonPatch.add('/jobs/release_bedrock', {
+    name: `Release ${bedrockPackageName}`,
+    'runs-on': 'ubuntu-latest',
+    permissions: {
+      contents: 'write',
+      'id-token': 'write',
+    },
+    env: {
+      CI: 'true',
+      PACKAGE_NAME: bedrockPackageName,
+      PACKAGE_DIR: 'packages/bedrock',
+      COMMIT_SCOPE: 'bedrock',
+      RELEASE_TAG_PREFIX: 'bedrock/',
+      NPM_CONFIG_PROVENANCE: 'true',
+    },
+    steps: [
+      {
+        name: 'Checkout',
+        uses: 'actions/checkout@v6',
+        with: {
+          'fetch-depth': 0,
+        },
+      },
+      {
+        name: 'Setup Node.js',
+        uses: 'actions/setup-node@v6',
+        with: {
+          'node-version': '24.16.0',
+          'package-manager-cache': false,
+        },
+      },
+      {
+        name: 'Upgrade npm for trusted publishing',
+        run: 'npm install -g npm@11.16.0\nnpm --version',
+      },
+      {
+        name: 'Install dependencies',
+        run: 'npm ci',
+      },
+      {
+        name: 'Prepare release',
+        run: 'node scripts/release-workspace-package.mjs',
+      },
+      {
+        name: 'Read release metadata',
+        id: 'release_meta',
+        run: [
+          'TAG=$(cat dist/releasetag.txt)',
+          'echo "tag=$TAG" >> "$GITHUB_OUTPUT"',
+          'if [ -z "$TAG" ]; then',
+          '  echo "should_release=false" >> "$GITHUB_OUTPUT"',
+          'elif git ls-remote -q --exit-code --tags origin "$TAG"; then',
+          '  echo "should_release=false" >> "$GITHUB_OUTPUT"',
+          'else',
+          '  echo "should_release=true" >> "$GITHUB_OUTPUT"',
+          'fi',
+          'cat "$GITHUB_OUTPUT"',
+        ].join('\n'),
+      },
+      {
+        name: 'Publish to npm',
+        if: "steps.release_meta.outputs.should_release == 'true' && github.event.inputs.dry_run != 'true'",
+        run: 'npm publish dist/js/*.tgz --access public --provenance',
+      },
+      {
+        name: 'Publish to GitHub Releases',
+        if: "steps.release_meta.outputs.should_release == 'true' && github.event.inputs.dry_run != 'true'",
+        env: {
+          GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}',
+        },
+        run: 'gh release create "${{ steps.release_meta.outputs.tag }}" -F dist/changelog.md -t "${{ steps.release_meta.outputs.tag }}" --target "$GITHUB_SHA"',
+      },
+    ],
+  }),
+);
+
 project.defaultTask?.reset('node --loader ts-node/esm .projenrc.ts');
 
 project.synth();

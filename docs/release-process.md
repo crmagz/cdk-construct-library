@@ -10,6 +10,7 @@ Use the package name as the conventional commit scope:
 feat(s3): add bucket construct
 fix(core): preserve construct metadata
 perf(aurora): reduce generated policy size
+feat(cloudfront): add distribution construct
 ```
 
 Write commit subjects as the decision made, not a file list. Keep them short
@@ -39,6 +40,7 @@ Package releases use service-prefixed semver tags:
 core/v0.1.0
 aurora/v0.1.0
 s3/v0.1.0
+cloudfront/v0.1.0
 ```
 
 ## Publish

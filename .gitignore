@@ -52,6 +52,8 @@ junit.xml
 !/packages/s3/tsconfig.json
 !/packages/sqs/package.json
 !/packages/sqs/tsconfig.json
+!/packages/iam/package.json
+!/packages/iam/tsconfig.json
 !/ferrflow.json
 !/.github/release.yml
 !/.github/workflows/release.yml

@@ -85,10 +85,10 @@
     },
     "deploy": {
       "name": "deploy",
-      "description": "Build and publish changed workspace packages through Changesets",
+      "description": "Publish releasable workspace packages from conventional commits",
       "steps": [
         {
-          "exec": "npm run build && changeset publish"
+          "exec": "npm run release-packages"
         }
       ]
     },
@@ -109,7 +109,7 @@
       "description": "Format source files with Prettier and ESLint fixes",
       "steps": [
         {
-          "exec": "prettier --write --no-error-on-unmatched-pattern README.md \"docs/**/*.md\" \"packages/*/README.md\" .projenrc.ts eslint.config.js \"packages/*/src/**/*.ts\" \"packages/*/test/**/*.ts\" && eslint \"packages/*/src/**/*.ts\" \"packages/*/test/**/*.ts\" .projenrc.ts --fix --no-error-on-unmatched-pattern"
+          "exec": "prettier --write --no-error-on-unmatched-pattern README.md \"docs/**/*.md\" \"packages/*/README.md\" .projenrc.ts eslint.config.js \"scripts/**/*.mjs\" \"packages/*/src/**/*.ts\" \"packages/*/test/**/*.ts\" && eslint \"packages/*/src/**/*.ts\" \"packages/*/test/**/*.ts\" .projenrc.ts --fix --no-error-on-unmatched-pattern"
         }
       ]
     },
@@ -118,7 +118,7 @@
       "description": "Check source formatting with Prettier",
       "steps": [
         {
-          "exec": "prettier --check --no-error-on-unmatched-pattern README.md \"docs/**/*.md\" \"packages/*/README.md\" .projenrc.ts eslint.config.js \"packages/*/src/**/*.ts\" \"packages/*/test/**/*.ts\""
+          "exec": "prettier --check --no-error-on-unmatched-pattern README.md \"docs/**/*.md\" \"packages/*/README.md\" .projenrc.ts eslint.config.js \"scripts/**/*.mjs\" \"packages/*/src/**/*.ts\" \"packages/*/test/**/*.ts\""
         }
       ]
     },
@@ -165,10 +165,6 @@
       "name": "post-compile",
       "description": "Runs after successful compilation"
     },
-    "post-upgrade": {
-      "name": "post-upgrade",
-      "description": "Runs after upgrading dependencies"
-    },
     "pre-compile": {
       "name": "pre-compile",
       "description": "Prepare the project for compilation"
@@ -189,30 +185,6 @@
       "steps": [
         {
           "exec": "jest --watch"
-        }
-      ]
-    },
-    "upgrade": {
-      "name": "upgrade",
-      "description": "upgrade dependencies",
-      "env": {
-        "CI": "0"
-      },
-      "steps": [
-        {
-          "exec": "npx npm-check-updates@20 --upgrade --target=minor --peer --no-deprecated --dep=dev,peer,prod,optional --filter=@types/jest,jest,prettier,ts-jest,ts-node"
-        },
-        {
-          "exec": "npm install"
-        },
-        {
-          "exec": "npm update @changesets/cli @types/jest @types/node aws-cdk-lib constructs eslint gts jest jest-junit prettier projen ts-jest ts-node typescript"
-        },
-        {
-          "exec": "npx projen"
-        },
-        {
-          "spawn": "post-upgrade"
         }
       ]
     },

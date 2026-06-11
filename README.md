@@ -23,16 +23,17 @@ npm install @cdk-construct/core
 
 ## Releases
 
-Releases are managed with Changesets. Add a changeset in feature and fix PRs
-when a published workspace package should receive a version bump:
+Releases are inferred from Conventional Commits on `main`. The release workflow
+checks each workspace path independently, calculates the next semantic version,
+publishes the package to npm, and creates a service-prefixed GitHub release tag:
 
-```sh
-npm run changeset
+```text
+s3/v0.1.0
+core/v0.1.0
 ```
 
-The release workflow opens a release PR with the selected package versions and
-publishes changed packages from `.github/workflows/release.yml` after that PR is
-merged.
+Use package scopes in commit subjects, for example
+`feat(s3): add bucket construct` or `fix(core): preserve metadata`.
 
 ## Commands
 
@@ -40,11 +41,9 @@ merged.
 - `npm run format`
 - `npm run build`
 - `npm run clean`
-- `npm run changeset`
 - `npm run deploy`
 
-`npm run deploy` builds the workspaces and publishes changed packages through
-Changesets.
+`npm run deploy` runs the same package release script used by CI.
 
 See [Release Process](docs/release-process.md) and
 [NPM Publishing](docs/npm-publishing.md) for release and trusted publishing

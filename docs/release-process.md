@@ -1,42 +1,51 @@
 # Release Process
 
-Releases are package-scoped and managed with Changesets.
+Releases are package-scoped and inferred from Conventional Commits.
 
 ## Change Story
 
-Feature and fix PRs should include a changeset when they change a published
-package:
-
-```sh
-npm run changeset
-```
-
-Select one package for a service-only release, such as `@cdk-construct/s3`.
-Select multiple packages when the change intentionally moves shared APIs and
-service packages together.
-
-Use concise summaries that describe the decision made:
+Use the package name as the conventional commit scope:
 
 ```text
-Add environment metadata helpers
-Preserve construct ids in output helpers
-Document package usage
+feat(s3): add bucket construct
+fix(core): preserve construct metadata
+perf(aurora): reduce generated policy size
 ```
 
-## Release PR
+Write commit subjects as the decision made, not a file list. Keep them short
+enough to read cleanly in generated release notes.
 
-Merging a PR with changesets to `main` runs `.github/workflows/release.yml`.
-The workflow opens or updates a release PR that contains version bumps and
-package changelogs.
+## Semver Rules
 
-Review the generated release PR for the intended package set before merging it.
-The release PR can update one package, several packages, or every workspace
-package depending on the included changesets.
+The release workflow evaluates commits that touched each `packages/<service>`
+directory since that service's latest tag.
+
+```text
+feat: minor
+fix: patch
+perf: patch
+!: major
+BREAKING CHANGE: major
+```
+
+Other commit types do not publish a package by themselves.
+
+## Tags
+
+Package releases use service-prefixed semver tags:
+
+```text
+core/v0.1.0
+aurora/v0.1.0
+s3/v0.1.0
+```
 
 ## Publish
 
-Merging the release PR back to `main` runs the same `release.yml` workflow and
-publishes changed packages with npm trusted publishing and provenance.
+Merging a releasable PR to `main` runs `.github/workflows/release.yml`. The
+workflow calculates package versions, updates package metadata in the runner,
+builds the changed packages, publishes them with npm trusted publishing and
+provenance, then creates the service tag and GitHub release.
 
 Each package must already exist in npm and have trusted publishing configured
 for this repository and the `release.yml` workflow before CI can publish it.

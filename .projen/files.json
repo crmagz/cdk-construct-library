@@ -1,7 +1,5 @@
 {
   "files": [
-    ".changeset/config.json",
-    ".changeset/README.md",
     ".gitattributes",
     ".github/ISSUE_TEMPLATE/bug_report.yml",
     ".github/ISSUE_TEMPLATE/config.yml",
@@ -11,7 +9,6 @@
     ".github/workflows/build.yml",
     ".github/workflows/pull-request-lint.yml",
     ".github/workflows/release.yml",
-    ".github/workflows/upgrade.yml",
     ".gitignore",
     ".mergify.yml",
     ".npmignore",

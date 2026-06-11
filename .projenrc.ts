@@ -503,7 +503,7 @@ new TextFile(project, '.github/workflows/release.yml', {
     '        uses: changesets/action@v1',
     '        with:',
     '          version: npx changeset version',
-    '          publish: npm run build && npx changeset publish',
+    '          publish: npm run release-packages',
     '          commit: "chore(release): version packages"',
     '          title: "chore(release): version packages"',
     '        env:',
@@ -693,6 +693,7 @@ project.package.setScript('deploy', 'projen deploy');
 project.package.setScript('changeset', 'changeset');
 project.package.setScript('version-packages', 'changeset version');
 project.package.setScript('publish-packages', 'changeset publish');
+project.package.setScript('release-packages', 'npm run build && changeset publish');
 
 project.package.file.patch(
   JsonPatch.replace('/jest/testMatch', [

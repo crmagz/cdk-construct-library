@@ -27,7 +27,8 @@
     "projen": "projen",
     "changeset": "changeset",
     "version-packages": "changeset version",
-    "publish-packages": "changeset publish"
+    "publish-packages": "changeset publish",
+    "release-packages": "npm run build && changeset publish"
   },
   "author": {
     "name": "crmagz",

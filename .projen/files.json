@@ -23,6 +23,7 @@
     "packages/aurora/tsconfig.json",
     "packages/core/tsconfig.json",
     "packages/iam/tsconfig.json",
+    "packages/opensearch/tsconfig.json",
     "packages/s3/tsconfig.json",
     "packages/sqs/tsconfig.json",
     "tsconfig.dev.json",

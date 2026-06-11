@@ -9,11 +9,12 @@ Prettier, and ESM package metadata.
 
 ## Packages
 
-| Package                 | Purpose                                         |
-| ----------------------- | ----------------------------------------------- |
-| `@cdk-construct/core`   | Shared foundation for future service constructs |
-| `@cdk-construct/aurora` | Aurora PostgreSQL and MySQL constructs          |
-| `@cdk-construct/s3`     | S3 bucket constructs                            |
+| Package                     | Purpose                                         |
+| --------------------------- | ----------------------------------------------- |
+| `@cdk-construct/core`       | Shared foundation for future service constructs |
+| `@cdk-construct/aurora`     | Aurora PostgreSQL and MySQL constructs          |
+| `@cdk-construct/s3`         | S3 bucket constructs                            |
+| `@cdk-construct/opensearch` | OpenSearch domain constructs                    |
 
 ## Install
 
@@ -29,11 +30,13 @@ publishes the package to npm, and creates a service-prefixed GitHub release tag:
 
 ```text
 s3/v0.1.0
+opensearch/v0.1.0
 core/v0.1.0
 ```
 
 Use package scopes in commit subjects, for example
-`feat(s3): add bucket construct` or `fix(core): preserve metadata`.
+`feat(s3): add bucket construct`, `feat(opensearch): add domain construct`, or
+`fix(core): preserve metadata`.
 
 ## Commands
 

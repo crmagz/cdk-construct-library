@@ -9,10 +9,11 @@ Prettier, and ESM package metadata.
 
 ## Packages
 
-| Package                 | Purpose                                         |
-| ----------------------- | ----------------------------------------------- |
-| `@cdk-construct/core`   | Shared foundation for future service constructs |
-| `@cdk-construct/aurora` | Aurora PostgreSQL and MySQL constructs          |
+| Package                  | Purpose                                         |
+| ------------------------ | ----------------------------------------------- |
+| `@cdk-construct/core`    | Shared foundation for future service constructs |
+| `@cdk-construct/aurora`  | Aurora PostgreSQL and MySQL constructs          |
+| `@cdk-construct/bedrock` | Bedrock AI constructs                           |
 
 ## Install
 

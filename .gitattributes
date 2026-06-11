@@ -27,6 +27,8 @@
 /package.json linguist-generated
 /packages/aurora/package.json linguist-generated
 /packages/aurora/tsconfig.json linguist-generated
+/packages/bedrock/package.json linguist-generated
+/packages/bedrock/tsconfig.json linguist-generated
 /packages/core/package.json linguist-generated
 /packages/core/tsconfig.json linguist-generated
 /tsconfig.dev.json linguist-generated linguist-language=JSON-with-Comments

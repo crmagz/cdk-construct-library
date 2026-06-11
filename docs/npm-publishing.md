@@ -38,7 +38,8 @@ npm publish --workspace @cdk-construct/aurora --access public
 ## Trusted Publishing
 
 After the package exists, configure trusted publishing in npm for the exact
-package and workflow.
+package and workflow. The release workflow must stay named `release.yml`
+because npm trusted publishing is bound to that filename.
 
 Expected settings:
 
@@ -55,9 +56,19 @@ The GitHub workflow must request OIDC:
 
 ```yaml
 permissions:
+  contents: write
+  pull-requests: write
   id-token: write
-  contents: read
 ```
+
+## CI Release Flow
+
+Changesets controls which workspaces publish. When a PR with changesets merges
+to `main`, `.github/workflows/release.yml` opens or updates a release PR. Merging
+that release PR publishes the changed packages through npm trusted publishing.
+
+A release can include one package or multiple packages. Use `npm run changeset`
+in the feature PR to select the intended package set and semver bump.
 
 ## Common Failures
 

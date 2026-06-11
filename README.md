@@ -21,15 +21,18 @@ Prettier, and ESM package metadata.
 npm install @cdk-construct/core
 ```
 
-## Project Status
+## Releases
 
-The first workspace release focuses on `@cdk-construct/core`. Service packages
-will be added independently as the public APIs settle, with package-specific
-versions, tags, and release notes.
+Releases are managed with Changesets. Add a changeset in feature and fix PRs
+when a published workspace package should receive a version bump:
 
-Releases are curated from conventional commits. Package-scoped commits such as
-`feat(core): add environment helpers` tell the release story without requiring
-verbose manual notes.
+```sh
+npm run changeset
+```
+
+The release workflow opens a release PR with the selected package versions and
+publishes changed packages from `.github/workflows/release.yml` after that PR is
+merged.
 
 ## Commands
 
@@ -37,10 +40,12 @@ verbose manual notes.
 - `npm run format`
 - `npm run build`
 - `npm run clean`
+- `npm run changeset`
 - `npm run deploy`
 
-`npm run deploy` builds the package and publishes the generated tarball from
-`dist/js` to NPM.
+`npm run deploy` builds the workspaces and publishes changed packages through
+Changesets.
 
-See [NPM Publishing](docs/npm-publishing.md) for first-publish and trusted
-publishing setup.
+See [Release Process](docs/release-process.md) and
+[NPM Publishing](docs/npm-publishing.md) for release and trusted publishing
+setup.

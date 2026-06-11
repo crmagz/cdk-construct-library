@@ -1,38 +1,42 @@
 # Release Process
 
-Releases are package-scoped and generated from conventional commits.
+Releases are package-scoped and managed with Changesets.
 
-## Commit Story
+## Change Story
 
-Use the package name as the conventional commit scope:
+Feature and fix PRs should include a changeset when they change a published
+package:
 
-```text
-feat(core): add environment metadata helpers
-fix(core): preserve construct ids in output helpers
-docs(core): document package usage
+```sh
+npm run changeset
 ```
 
-Write commit subjects as the decision made, not a file list. Keep them short
-enough to read cleanly in generated release notes.
+Select one package for a service-only release, such as `@cdk-construct/s3`.
+Select multiple packages when the change intentionally moves shared APIs and
+service packages together.
 
-## Tags
-
-Package releases use service-prefixed semver tags:
+Use concise summaries that describe the decision made:
 
 ```text
-core/v0.1.0
-aurora/v0.1.0
-s3/v0.1.0
+Add environment metadata helpers
+Preserve construct ids in output helpers
+Document package usage
 ```
 
-The first workspace release publishes `@cdk-construct/core` and creates a
-`core/v...` tag.
+## Release PR
 
-## Current Release Target
+Merging a PR with changesets to `main` runs `.github/workflows/release.yml`.
+The workflow opens or updates a release PR that contains version bumps and
+package changelogs.
 
-The generated release workflow currently packages `@cdk-construct/core` only.
-The core release trigger is scoped to commits that affect `packages/core`.
+Review the generated release PR for the intended package set before merging it.
+The release PR can update one package, several packages, or every workspace
+package depending on the included changesets.
 
-New service packages should be bootstrapped and configured in npm before they are
-added to the publish artifact set. Each package should get its own tag prefix and
-release target when it is ready to publish.
+## Publish
+
+Merging the release PR back to `main` runs the same `release.yml` workflow and
+publishes changed packages with npm trusted publishing and provenance.
+
+Each package must already exist in npm and have trusted publishing configured
+for this repository and the `release.yml` workflow before CI can publish it.

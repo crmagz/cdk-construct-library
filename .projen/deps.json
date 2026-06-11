@@ -1,6 +1,11 @@
 {
   "dependencies": [
     {
+      "name": "@changesets/cli",
+      "version": "2.31.0",
+      "type": "build"
+    },
+    {
       "name": "@types/jest",
       "type": "build"
     },
@@ -12,11 +17,6 @@
     {
       "name": "aws-cdk-lib",
       "version": "2.236.0",
-      "type": "build"
-    },
-    {
-      "name": "commit-and-tag-version",
-      "version": "^12",
       "type": "build"
     },
     {

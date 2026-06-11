@@ -1,11 +1,6 @@
 {
   "dependencies": [
     {
-      "name": "@changesets/cli",
-      "version": "2.31.0",
-      "type": "build"
-    },
-    {
       "name": "@types/jest",
       "type": "build"
     },

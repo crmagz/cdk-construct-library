@@ -57,18 +57,24 @@ The GitHub workflow must request OIDC:
 ```yaml
 permissions:
   contents: write
-  pull-requests: write
   id-token: write
 ```
 
 ## CI Release Flow
 
-Changesets controls which workspaces publish. When a PR with changesets merges
-to `main`, `.github/workflows/release.yml` opens or updates a release PR. Merging
-that release PR publishes the changed packages through npm trusted publishing.
+The release workflow controls which workspaces publish by inspecting
+Conventional Commits that touched each package path since that package's latest
+service tag.
 
-A release can include one package or multiple packages. Use `npm run changeset`
-in the feature PR to select the intended package set and semver bump.
+A release can include one package or multiple packages. Use scopes such as
+`feat(s3): add bucket construct` and `fix(core): preserve metadata` so release
+notes stay readable.
+
+Published packages receive matching GitHub releases and service tags:
+
+```text
+<service>/v<semver>
+```
 
 ## Common Failures
 

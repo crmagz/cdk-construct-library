@@ -2,8 +2,6 @@
 
 * text=auto eol=lf
 *.snap linguist-generated
-/.changeset/config.json linguist-generated
-/.changeset/README.md linguist-generated
 /.gitattributes linguist-generated
 /.github/ISSUE_TEMPLATE/bug_report.yml linguist-generated
 /.github/ISSUE_TEMPLATE/config.yml linguist-generated
@@ -13,7 +11,6 @@
 /.github/workflows/build.yml linguist-generated
 /.github/workflows/pull-request-lint.yml linguist-generated
 /.github/workflows/release.yml linguist-generated
-/.github/workflows/upgrade.yml linguist-generated
 /.gitignore linguist-generated
 /.mergify.yml linguist-generated
 /.npmignore linguist-generated

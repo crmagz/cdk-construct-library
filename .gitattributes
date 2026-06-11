@@ -26,6 +26,8 @@
 /LICENSE linguist-generated
 /package-lock.json linguist-generated
 /package.json linguist-generated
+/packages/api-gateway/package.json linguist-generated
+/packages/api-gateway/tsconfig.json linguist-generated
 /packages/aurora/package.json linguist-generated
 /packages/aurora/tsconfig.json linguist-generated
 /packages/cloudfront/package.json linguist-generated

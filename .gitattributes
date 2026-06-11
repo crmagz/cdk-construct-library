@@ -30,6 +30,8 @@
 /packages/aurora/tsconfig.json linguist-generated
 /packages/core/package.json linguist-generated
 /packages/core/tsconfig.json linguist-generated
+/packages/iam/package.json linguist-generated
+/packages/iam/tsconfig.json linguist-generated
 /packages/s3/package.json linguist-generated
 /packages/s3/tsconfig.json linguist-generated
 /packages/sqs/package.json linguist-generated

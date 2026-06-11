@@ -48,6 +48,8 @@ junit.xml
 !/packages/core/tsconfig.json
 !/packages/aurora/package.json
 !/packages/aurora/tsconfig.json
+!/packages/elasticache/package.json
+!/packages/elasticache/tsconfig.json
 !/packages/s3/package.json
 !/packages/s3/tsconfig.json
 !/packages/sqs/package.json

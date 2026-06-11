@@ -39,6 +39,7 @@ Package releases use service-prefixed semver tags:
 ```text
 core/v0.1.0
 aurora/v0.1.0
+elasticache/v0.1.0
 s3/v0.1.0
 cloudfront/v0.1.0
 ```

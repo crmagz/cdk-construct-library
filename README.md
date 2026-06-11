@@ -17,6 +17,7 @@ Prettier, and ESM package metadata.
 | `@cdk-construct/sqs`        | SQS queue constructs                            |
 | `@cdk-construct/iam`        | IAM role constructs                             |
 | `@cdk-construct/cloudfront` | CloudFront distribution constructs              |
+| `@cdk-construct/elasticache` | ElastiCache Redis and Valkey constructs    |
 
 ## Install
 

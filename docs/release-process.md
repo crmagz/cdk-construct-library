@@ -22,6 +22,7 @@ Package releases use service-prefixed semver tags:
 ```text
 core/v0.1.0
 aurora/v0.1.0
+eks/v0.1.0
 ```
 
 The first workspace release publishes `@cdk-construct/core` and creates a

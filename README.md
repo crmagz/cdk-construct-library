@@ -13,6 +13,7 @@ Prettier, and ESM package metadata.
 | ----------------------- | ----------------------------------------------- |
 | `@cdk-construct/core`   | Shared foundation for future service constructs |
 | `@cdk-construct/aurora` | Aurora PostgreSQL and MySQL constructs          |
+| `@cdk-construct/eks`    | EKS cluster constructs                          |
 
 ## Install
 

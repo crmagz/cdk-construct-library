@@ -39,6 +39,9 @@ Package releases use service-prefixed semver tags:
 core/v0.1.0
 aurora/v0.1.0
 s3/v0.1.0
+sqs/v0.1.0
+iam/v0.1.0
+cloudwatch/v0.1.0
 ```
 
 ## Publish

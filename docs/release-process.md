@@ -11,6 +11,7 @@ feat(s3): add bucket construct
 fix(core): preserve construct metadata
 perf(aurora): reduce generated policy size
 feat(cloudfront): add distribution construct
+feat(waf): add web acl construct
 ```
 
 Write commit subjects as the decision made, not a file list. Keep them short
@@ -41,6 +42,7 @@ core/v0.1.0
 aurora/v0.1.0
 s3/v0.1.0
 cloudfront/v0.1.0
+waf/v0.1.0
 ```
 
 ## Publish

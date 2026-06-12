@@ -59,4 +59,11 @@ junit.xml
 !/eslint.config.js
 /.npm-cache/
 /packages/*/lib/
+/.CLAUDE/
+/.claude/
+/.codex/
+/.cursor/
+/.continue/
+/.windsurf/
+/.agents/
 !/.projenrc.ts

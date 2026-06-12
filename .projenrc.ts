@@ -10,8 +10,10 @@ const nodeVersion = '24.16.0';
 const npmVersion = '11.16.0';
 const ferrFlowVersion = '5.2.4';
 const awsCdkCliVersion = '2.1126.0';
-const awsCdkLibVersion = '2.236.0';
-const constructsVersion = '10.4.0';
+const awsCdkLibVersion = '2.258.1';
+const constructsVersion = '10.6.0';
+const nodeTypesVersion = '24.13.2';
+const typescriptVersion = '6.0.3';
 const awsCdkLibPeerVersion = `^${awsCdkLibVersion}`;
 const constructsPeerVersion = `^${constructsVersion}`;
 
@@ -116,7 +118,7 @@ const project = new typescript.TypeScriptProject({
     '- [ ] No new warnings generated',
   ],
 
-  typescriptVersion: '5.9.3',
+  typescriptVersion,
   eslint: false,
   prettier: true,
   prettierOptions: {
@@ -131,6 +133,7 @@ const project = new typescript.TypeScriptProject({
 
   peerDeps: [`aws-cdk-lib@${awsCdkLibPeerVersion}`, `constructs@${constructsPeerVersion}`],
   devDeps: [
+    `@types/node@${nodeTypesVersion}`,
     'eslint@^9.37.0',
     `aws-cdk@${awsCdkCliVersion}`,
     `aws-cdk-lib@${awsCdkLibVersion}`,

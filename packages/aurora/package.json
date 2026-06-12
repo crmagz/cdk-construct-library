@@ -35,12 +35,12 @@
     "package": "npm pack --pack-destination ../../dist/js"
   },
   "peerDependencies": {
-    "aws-cdk-lib": "^2.236.0",
-    "constructs": "^10.4.0"
+    "aws-cdk-lib": "^2.258.1",
+    "constructs": "^10.6.0"
   },
   "devDependencies": {
-    "aws-cdk-lib": "2.236.0",
-    "constructs": "10.4.0"
+    "aws-cdk-lib": "2.258.1",
+    "constructs": "10.6.0"
   },
   "keywords": [
     "aws-cdk",

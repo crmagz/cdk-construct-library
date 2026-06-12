@@ -6,10 +6,12 @@ import test from 'node:test';
 const root = process.cwd();
 const expected = {
   awsCdkCli: '2.1126.0',
-  awsCdkLib: '2.236.0',
-  awsCdkLibPeer: '^2.236.0',
-  constructs: '10.4.0',
-  constructsPeer: '^10.4.0',
+  awsCdkLib: '2.258.1',
+  awsCdkLibPeer: '^2.258.1',
+  constructs: '10.6.0',
+  constructsPeer: '^10.6.0',
+  nodeTypes: '24.13.2',
+  typescript: '6.0.3',
 };
 
 async function readJson(relativePath) {
@@ -21,7 +23,9 @@ test('root package pins the shared CDK toolchain versions', async () => {
 
   assert.equal(rootPackage.devDependencies['aws-cdk'], expected.awsCdkCli);
   assert.equal(rootPackage.devDependencies['aws-cdk-lib'], expected.awsCdkLib);
+  assert.equal(rootPackage.devDependencies['@types/node'], expected.nodeTypes);
   assert.equal(rootPackage.devDependencies.constructs, expected.constructs);
+  assert.equal(rootPackage.devDependencies.typescript, expected.typescript);
   assert.equal(rootPackage.peerDependencies['aws-cdk-lib'], expected.awsCdkLibPeer);
   assert.equal(rootPackage.peerDependencies.constructs, expected.constructsPeer);
 });

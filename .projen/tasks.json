@@ -174,7 +174,7 @@
       "description": "Run tests",
       "steps": [
         {
-          "exec": "node --test \"tests/*.test.mjs\" && jest --passWithNoTests --updateSnapshot"
+          "exec": "node --test \"tests/*.test.mjs\" && NODE_OPTIONS=--experimental-vm-modules jest --passWithNoTests --updateSnapshot"
         }
       ]
     },

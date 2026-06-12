@@ -32,7 +32,8 @@
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
     "declarationMap": true,
-    "verbatimModuleSyntax": true
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true
   },
   "include": [
     "src/**/*.ts",

@@ -62,9 +62,8 @@ permissions:
 
 ## CI Release Flow
 
-The release workflow controls which workspaces publish by inspecting
-Conventional Commits that touched each package path since that package's latest
-service tag.
+FerrFlow controls which workspaces publish by inspecting Conventional Commits
+that touched each package path since that package's latest service tag.
 
 A release can include one package or multiple packages. Use scopes such as
 `feat(s3): add bucket construct` and `fix(core): preserve metadata` so release

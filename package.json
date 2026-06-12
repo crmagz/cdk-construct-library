@@ -22,8 +22,7 @@
     "test": "projen test",
     "test:watch": "projen test:watch",
     "watch": "projen watch",
-    "projen": "projen",
-    "release-packages": "node scripts/release-workspace-packages.mjs"
+    "projen": "projen"
   },
   "author": {
     "name": "crmagz",

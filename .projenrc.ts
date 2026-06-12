@@ -4,6 +4,27 @@ const corePackageName = '@cdk-construct/core';
 const auroraPackageName = '@cdk-construct/aurora';
 const s3PackageName = '@cdk-construct/s3';
 const repositoryUrl = 'git+https://github.com/crmagz/cdk-construct-library.git';
+const nodeVersion = '24.16.0';
+const npmVersion = '11.16.0';
+const ferrFlowVersion = '5.2.4';
+
+const workspacePackages = [
+  {
+    service: 'core',
+    packageName: corePackageName,
+    path: 'packages/core',
+  },
+  {
+    service: 'aurora',
+    packageName: auroraPackageName,
+    path: 'packages/aurora',
+  },
+  {
+    service: 's3',
+    packageName: s3PackageName,
+    path: 'packages/s3',
+  },
+];
 
 const project = new typescript.TypeScriptProject({
   name: '@cdk-construct/library',
@@ -19,7 +40,7 @@ const project = new typescript.TypeScriptProject({
   npmTrustedPublishing: true,
 
   minNodeVersion: '20.0.0',
-  workflowNodeVersion: '24.16.0',
+  workflowNodeVersion: nodeVersion,
 
   projenrcTs: true,
   projenVersion: '0.99.71',
@@ -122,7 +143,7 @@ const project = new typescript.TypeScriptProject({
 project.package.addField('private', true);
 project.package.addField('workspaces', ['packages/*']);
 project.package.addField('type', 'module');
-project.package.addField('packageManager', 'npm@11.16.0');
+project.package.addField('packageManager', `npm@${npmVersion}`);
 project.package.addField('exports', {
   '.': {
     types: './lib/index.d.ts',
@@ -178,7 +199,7 @@ new JsonFile(project, 'packages/core/package.json', {
     engines: {
       node: '>= 20.0.0',
     },
-    packageManager: 'npm@11.16.0',
+    packageManager: `npm@${npmVersion}`,
   },
 });
 
@@ -267,7 +288,7 @@ new JsonFile(project, 'packages/aurora/package.json', {
     engines: {
       node: '>= 20.0.0',
     },
-    packageManager: 'npm@11.16.0',
+    packageManager: `npm@${npmVersion}`,
   },
 });
 
@@ -356,7 +377,7 @@ new JsonFile(project, 'packages/s3/package.json', {
     engines: {
       node: '>= 20.0.0',
     },
-    packageManager: 'npm@11.16.0',
+    packageManager: `npm@${npmVersion}`,
   },
 });
 
@@ -395,6 +416,37 @@ new JsonFile(project, 'packages/s3/tsconfig.json', {
     },
     include: ['src/**/*.ts'],
     exclude: ['lib', 'node_modules'],
+  },
+});
+
+new JsonFile(project, 'ferrflow.json', {
+  obj: {
+    $schema: 'https://ferrflow.com/schema/ferrflow.json',
+    workspace: {
+      remote: 'origin',
+      branch: 'main',
+      anonymous_telemetry: false,
+      versioning: 'semver',
+      tagTemplate: '{name}/v{version}',
+      recoverMissedReleases: true,
+      releaseCommitMode: 'commit',
+      releaseCommitScope: 'grouped',
+      skipCi: true,
+    },
+    package: workspacePackages.map((workspacePackage) => ({
+      name: workspacePackage.service,
+      path: workspacePackage.path,
+      changelog: `${workspacePackage.path}/CHANGELOG.md`,
+      versionedFiles: [
+        {
+          path: `${workspacePackage.path}/package.json`,
+          format: 'json',
+        },
+      ],
+      hooks: {
+        postPublish: `npm run build --workspace ${workspacePackage.packageName} && npm publish --workspace ${workspacePackage.packageName} --access public`,
+      },
+    })),
   },
 });
 
@@ -459,27 +511,27 @@ new TextFile(project, '.github/workflows/release.yml', {
     '        uses: actions/checkout@v6',
     '        with:',
     '          fetch-depth: 0',
-    '      - name: Set git identity',
-    '        run: |-',
-    '          git config user.name "github-actions[bot]"',
-    '          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"',
     '      - name: Setup Node.js',
     '        uses: actions/setup-node@v6',
     '        with:',
-    '          node-version: 24.16.0',
+    `          node-version: ${nodeVersion}`,
     '          package-manager-cache: false',
     '      - name: Upgrade npm for trusted publishing',
     '        run: |-',
-    '          npm install -g npm@11.16.0',
+    `          npm install -g npm@${npmVersion}`,
     '          npm --version',
     '      - name: Install dependencies',
     '        run: npm ci',
     '      - name: Fetch release tags',
     '        run: git fetch --force --tags origin',
     '      - name: Release packages',
-    '        run: npm run release-packages',
+    `        uses: FerrLabs/FerrFlow@v${ferrFlowVersion}`,
+    '        with:',
+    `          version: ${ferrFlowVersion}`,
+    '          mode: release',
     '        env:',
     '          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}',
+    '          DO_NOT_TRACK: "1"',
     '          NPM_CONFIG_ACCESS: public',
     '          NPM_CONFIG_PROVENANCE: "true"',
     '',
@@ -629,12 +681,12 @@ project.addTask('lint', {
 
 project.addTask('format', {
   description: 'Format source files with Prettier and ESLint fixes',
-  exec: 'prettier --write --no-error-on-unmatched-pattern README.md "docs/**/*.md" "packages/*/README.md" .projenrc.ts eslint.config.js "scripts/**/*.mjs" "packages/*/src/**/*.ts" "packages/*/test/**/*.ts" && eslint "packages/*/src/**/*.ts" "packages/*/test/**/*.ts" .projenrc.ts --fix --no-error-on-unmatched-pattern',
+  exec: 'prettier --write --no-error-on-unmatched-pattern README.md "docs/**/*.md" "packages/*/README.md" .projenrc.ts eslint.config.js "scripts/**/*.mjs" "tests/**/*.mjs" "packages/*/src/**/*.ts" "packages/*/test/**/*.ts" && eslint "packages/*/src/**/*.ts" "packages/*/test/**/*.ts" .projenrc.ts --fix --no-error-on-unmatched-pattern',
 });
 
 project.addTask('format:check', {
   description: 'Check source formatting with Prettier',
-  exec: 'prettier --check --no-error-on-unmatched-pattern README.md "docs/**/*.md" "packages/*/README.md" .projenrc.ts eslint.config.js "scripts/**/*.mjs" "packages/*/src/**/*.ts" "packages/*/test/**/*.ts"',
+  exec: 'prettier --check --no-error-on-unmatched-pattern README.md "docs/**/*.md" "packages/*/README.md" .projenrc.ts eslint.config.js "scripts/**/*.mjs" "tests/**/*.mjs" "packages/*/src/**/*.ts" "packages/*/test/**/*.ts"',
 });
 
 project.addTask('clean', {
@@ -643,8 +695,8 @@ project.addTask('clean', {
 });
 
 project.addTask('deploy', {
-  description: 'Publish releasable workspace packages from conventional commits',
-  exec: 'npm run release-packages',
+  description: 'Publish releasable workspace packages with FerrFlow',
+  exec: 'ferrflow release',
 });
 
 project.gitignore.addPatterns('/.npm-cache/', '/packages/*/lib/');
@@ -658,14 +710,13 @@ project.tasks
 project.tasks.tryFind('compile')?.reset('npm run build --workspaces --if-present');
 project.tasks
   .tryFind('test')
-  ?.reset('node --test "scripts/*.test.mjs" && jest --passWithNoTests --updateSnapshot');
+  ?.reset('node --test "tests/*.test.mjs" && jest --passWithNoTests --updateSnapshot');
 
 project.package.setScript('lint', 'projen lint');
 project.package.setScript('format', 'projen format');
 project.package.setScript('format:check', 'projen format:check');
 project.package.setScript('clean', 'projen clean');
 project.package.setScript('deploy', 'projen deploy');
-project.package.setScript('release-packages', 'node scripts/release-workspace-packages.mjs');
 
 project.package.file.patch(
   JsonPatch.replace('/jest/testMatch', [
@@ -678,7 +729,7 @@ project.package.file.patch(JsonPatch.add('/publishConfig', { access: 'public' })
 project.package.file.patch(
   JsonPatch.replace('/devEngines/packageManager', {
     name: 'npm',
-    version: '11.16.0',
+    version: npmVersion,
     onFail: 'warn',
   }),
 );

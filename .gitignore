@@ -50,6 +50,7 @@ junit.xml
 !/packages/aurora/tsconfig.json
 !/packages/s3/package.json
 !/packages/s3/tsconfig.json
+!/ferrflow.json
 !/.github/release.yml
 !/.github/workflows/release.yml
 !/.github/ISSUE_TEMPLATE/bug_report.yml

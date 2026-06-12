@@ -736,7 +736,17 @@ project.addTask('deploy', {
   exec: 'ferrflow release',
 });
 
-project.gitignore.addPatterns('/.npm-cache/', '/packages/*/lib/');
+project.gitignore.addPatterns(
+  '/.npm-cache/',
+  '/packages/*/lib/',
+  '/.CLAUDE/',
+  '/.claude/',
+  '/.codex/',
+  '/.cursor/',
+  '/.continue/',
+  '/.windsurf/',
+  '/.agents/',
+);
 project.addPackageIgnore('/.npm-cache/');
 project.addPackageIgnore('/eslint.config.js');
 project.tasks.tryFind('package')?.reset('mkdir -p dist/js');

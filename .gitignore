@@ -66,4 +66,8 @@ junit.xml
 /.continue/
 /.windsurf/
 /.agents/
+/AGENTS.md
+/AGENT.md
+/agents.md
+/agent.md
 !/.projenrc.ts

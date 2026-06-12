@@ -746,6 +746,10 @@ project.gitignore.addPatterns(
   '/.continue/',
   '/.windsurf/',
   '/.agents/',
+  '/AGENTS.md',
+  '/AGENT.md',
+  '/agents.md',
+  '/agent.md',
 );
 project.addPackageIgnore('/.npm-cache/');
 project.addPackageIgnore('/eslint.config.js');

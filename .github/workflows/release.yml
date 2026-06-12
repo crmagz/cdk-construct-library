@@ -23,6 +23,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          token: ${{ secrets.TOKEN }}
       - name: Set git identity
         run: |-
           git config user.name "crmagz"
@@ -46,7 +47,7 @@ jobs:
           version: 5.2.4
           mode: release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
           DO_NOT_TRACK: "1"
           NPM_CONFIG_ACCESS: public
           NPM_CONFIG_PROVENANCE: "true"

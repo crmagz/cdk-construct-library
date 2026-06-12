@@ -1,6 +1,6 @@
 {
   "name": "@cdk-construct/core",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Core utilities and shared types for paved-road AWS CDK constructs",
   "repository": {
     "type": "git",

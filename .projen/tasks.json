@@ -174,8 +174,7 @@
       "description": "Run tests",
       "steps": [
         {
-          "exec": "jest --passWithNoTests --updateSnapshot",
-          "receiveArgs": true
+          "exec": "node --test \"scripts/*.test.mjs\" && jest --passWithNoTests --updateSnapshot"
         }
       ]
     },

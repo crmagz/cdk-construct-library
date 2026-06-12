@@ -85,10 +85,10 @@
     },
     "deploy": {
       "name": "deploy",
-      "description": "Publish releasable workspace packages from conventional commits",
+      "description": "Publish releasable workspace packages with FerrFlow",
       "steps": [
         {
-          "exec": "npm run release-packages"
+          "exec": "ferrflow release"
         }
       ]
     },
@@ -109,7 +109,7 @@
       "description": "Format source files with Prettier and ESLint fixes",
       "steps": [
         {
-          "exec": "prettier --write --no-error-on-unmatched-pattern README.md \"docs/**/*.md\" \"packages/*/README.md\" .projenrc.ts eslint.config.js \"scripts/**/*.mjs\" \"packages/*/src/**/*.ts\" \"packages/*/test/**/*.ts\" && eslint \"packages/*/src/**/*.ts\" \"packages/*/test/**/*.ts\" .projenrc.ts --fix --no-error-on-unmatched-pattern"
+          "exec": "prettier --write --no-error-on-unmatched-pattern README.md \"docs/**/*.md\" \"packages/*/README.md\" .projenrc.ts eslint.config.js \"scripts/**/*.mjs\" \"tests/**/*.mjs\" \"packages/*/src/**/*.ts\" \"packages/*/test/**/*.ts\" && eslint \"packages/*/src/**/*.ts\" \"packages/*/test/**/*.ts\" .projenrc.ts --fix --no-error-on-unmatched-pattern"
         }
       ]
     },
@@ -118,7 +118,7 @@
       "description": "Check source formatting with Prettier",
       "steps": [
         {
-          "exec": "prettier --check --no-error-on-unmatched-pattern README.md \"docs/**/*.md\" \"packages/*/README.md\" .projenrc.ts eslint.config.js \"scripts/**/*.mjs\" \"packages/*/src/**/*.ts\" \"packages/*/test/**/*.ts\""
+          "exec": "prettier --check --no-error-on-unmatched-pattern README.md \"docs/**/*.md\" \"packages/*/README.md\" .projenrc.ts eslint.config.js \"scripts/**/*.mjs\" \"tests/**/*.mjs\" \"packages/*/src/**/*.ts\" \"packages/*/test/**/*.ts\""
         }
       ]
     },
@@ -174,7 +174,7 @@
       "description": "Run tests",
       "steps": [
         {
-          "exec": "node --test \"scripts/*.test.mjs\" && jest --passWithNoTests --updateSnapshot"
+          "exec": "node --test \"tests/*.test.mjs\" && jest --passWithNoTests --updateSnapshot"
         }
       ]
     },

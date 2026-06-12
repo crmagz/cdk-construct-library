@@ -17,6 +17,7 @@
     ".projen/deps.json",
     ".projen/files.json",
     ".projen/tasks.json",
+    "ferrflow.json",
     "LICENSE",
     "packages/aurora/tsconfig.json",
     "packages/core/tsconfig.json",

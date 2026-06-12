@@ -1,6 +1,6 @@
 # Release Process
 
-Releases are package-scoped and inferred from Conventional Commits.
+Releases are package-scoped and inferred from Conventional Commits by FerrFlow.
 
 ## Change Story
 
@@ -17,8 +17,9 @@ enough to read cleanly in generated release notes.
 
 ## Semver Rules
 
-The release workflow evaluates commits that touched each `packages/<service>`
-directory since that service's latest tag.
+FerrFlow evaluates commits that touched each `packages/<service>` directory
+since that service's latest tag. `recoverMissedReleases` is enabled so a package
+that changed before the workflow was added can still be released later.
 
 ```text
 feat: minor
@@ -43,9 +44,12 @@ s3/v0.1.0
 ## Publish
 
 Merging a releasable PR to `main` runs `.github/workflows/release.yml`. The
-workflow calculates package versions, updates package metadata in the runner,
-builds the changed packages, publishes them with npm trusted publishing and
-provenance, then creates the service tag and GitHub release.
+workflow runs `FerrLabs/FerrFlow`, which calculates package versions, updates
+package metadata and changelogs, creates the release commit, creates service
+tags, creates GitHub releases, and runs each package's publish hook.
+
+The publish hooks build the changed workspaces and publish them with npm trusted
+publishing and provenance from the `release.yml` workflow.
 
 Each package must already exist in npm and have trusted publishing configured
 for this repository and the `release.yml` workflow before CI can publish it.

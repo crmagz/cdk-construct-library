@@ -9,6 +9,11 @@ const repositoryUrl = 'git+https://github.com/crmagz/cdk-construct-library.git';
 const nodeVersion = '24.16.0';
 const npmVersion = '11.16.0';
 const ferrFlowVersion = '5.2.4';
+const awsCdkCliVersion = '2.1126.0';
+const awsCdkLibVersion = '2.236.0';
+const constructsVersion = '10.4.0';
+const awsCdkLibPeerVersion = `^${awsCdkLibVersion}`;
+const constructsPeerVersion = `^${constructsVersion}`;
 
 const packageVersion = (packageJsonPath: string, fallback = '0.0.0'): string => {
   try {
@@ -124,11 +129,12 @@ const project = new typescript.TypeScriptProject({
     },
   },
 
-  peerDeps: ['aws-cdk-lib@^2.236.0', 'constructs@^10.4.0'],
+  peerDeps: [`aws-cdk-lib@${awsCdkLibPeerVersion}`, `constructs@${constructsPeerVersion}`],
   devDeps: [
     'eslint@^9.37.0',
-    'aws-cdk-lib@2.236.0',
-    'constructs@10.4.0',
+    `aws-cdk@${awsCdkCliVersion}`,
+    `aws-cdk-lib@${awsCdkLibVersion}`,
+    `constructs@${constructsVersion}`,
     'gts@^7.0.0',
     'prettier@^3.8.1',
   ],
@@ -205,12 +211,12 @@ new JsonFile(project, 'packages/core/package.json', {
       package: 'npm pack --pack-destination ../../dist/js',
     },
     peerDependencies: {
-      'aws-cdk-lib': '^2.236.0',
-      constructs: '^10.4.0',
+      'aws-cdk-lib': awsCdkLibPeerVersion,
+      constructs: constructsPeerVersion,
     },
     devDependencies: {
-      'aws-cdk-lib': '2.236.0',
-      constructs: '10.4.0',
+      'aws-cdk-lib': awsCdkLibVersion,
+      constructs: constructsVersion,
     },
     keywords: ['aws-cdk', 'cdk', 'constructs', 'core', 'typescript', 'esm'],
     engines: {
@@ -294,12 +300,12 @@ new JsonFile(project, 'packages/aurora/package.json', {
       package: 'npm pack --pack-destination ../../dist/js',
     },
     peerDependencies: {
-      'aws-cdk-lib': '^2.236.0',
-      constructs: '^10.4.0',
+      'aws-cdk-lib': awsCdkLibPeerVersion,
+      constructs: constructsPeerVersion,
     },
     devDependencies: {
-      'aws-cdk-lib': '2.236.0',
-      constructs: '10.4.0',
+      'aws-cdk-lib': awsCdkLibVersion,
+      constructs: constructsVersion,
     },
     keywords: ['aws-cdk', 'cdk', 'constructs', 'aurora', 'rds', 'typescript', 'esm'],
     engines: {
@@ -383,12 +389,12 @@ new JsonFile(project, 'packages/s3/package.json', {
       package: 'npm pack --pack-destination ../../dist/js',
     },
     peerDependencies: {
-      'aws-cdk-lib': '^2.236.0',
-      constructs: '^10.4.0',
+      'aws-cdk-lib': awsCdkLibPeerVersion,
+      constructs: constructsPeerVersion,
     },
     devDependencies: {
-      'aws-cdk-lib': '2.236.0',
-      constructs: '10.4.0',
+      'aws-cdk-lib': awsCdkLibVersion,
+      constructs: constructsVersion,
     },
     keywords: ['aws-cdk', 'cdk', 'constructs', 's3', 'storage', 'typescript', 'esm'],
     engines: {

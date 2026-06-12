@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+
 import { JsonFile, JsonPatch, TextFile, javascript, typescript } from 'projen';
 
 const corePackageName = '@cdk-construct/core';
@@ -7,6 +9,18 @@ const repositoryUrl = 'git+https://github.com/crmagz/cdk-construct-library.git';
 const nodeVersion = '24.16.0';
 const npmVersion = '11.16.0';
 const ferrFlowVersion = '5.2.4';
+
+const packageVersion = (packageJsonPath: string, fallback = '0.0.0'): string => {
+  try {
+    const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8')) as {
+      version?: string;
+    };
+
+    return packageJson.version ?? fallback;
+  } catch {
+    return fallback;
+  }
+};
 
 const workspacePackages = [
   {
@@ -136,6 +150,9 @@ const project = new typescript.TypeScriptProject({
     },
   },
   tsconfigDev: {
+    compilerOptions: {
+      isolatedModules: true,
+    },
     include: ['packages/*/src/**/*.ts', 'packages/*/test/**/*.ts', '.projenrc.ts'],
   },
 });
@@ -156,7 +173,7 @@ new JsonFile(project, 'packages/core/package.json', {
   readonly: false,
   obj: {
     name: corePackageName,
-    version: '0.0.0',
+    version: packageVersion('packages/core/package.json'),
     description: 'Core utilities and shared types for paved-road AWS CDK constructs',
     repository: {
       type: 'git',
@@ -245,7 +262,7 @@ new JsonFile(project, 'packages/aurora/package.json', {
   readonly: false,
   obj: {
     name: auroraPackageName,
-    version: '0.0.0',
+    version: packageVersion('packages/aurora/package.json'),
     description: 'Aurora PostgreSQL and MySQL constructs for AWS CDK',
     repository: {
       type: 'git',
@@ -334,7 +351,7 @@ new JsonFile(project, 'packages/s3/package.json', {
   readonly: false,
   obj: {
     name: s3PackageName,
-    version: '0.0.0',
+    version: packageVersion('packages/s3/package.json'),
     description: 'S3 bucket constructs for AWS CDK',
     repository: {
       type: 'git',
@@ -355,7 +372,7 @@ new JsonFile(project, 'packages/s3/package.json', {
         import: './lib/index.js',
       },
     },
-    files: ['lib', 'README.md'],
+    files: ['lib', 'README.md', 'docs'],
     sideEffects: false,
     publishConfig: {
       access: 'public',
@@ -715,7 +732,9 @@ project.tasks
 project.tasks.tryFind('compile')?.reset('npm run build --workspaces --if-present');
 project.tasks
   .tryFind('test')
-  ?.reset('node --test "tests/*.test.mjs" && jest --passWithNoTests --updateSnapshot');
+  ?.reset(
+    'node --test "tests/*.test.mjs" && NODE_OPTIONS=--experimental-vm-modules jest --passWithNoTests --updateSnapshot',
+  );
 
 project.package.setScript('lint', 'projen lint');
 project.package.setScript('format', 'projen format');
@@ -728,6 +747,19 @@ project.package.file.patch(
     '<rootDir>/packages/*/@(src|test)/**/*(*.)@(spec|test).ts?(x)',
     '<rootDir>/packages/*/@(src|test)/**/__tests__/**/*.ts?(x)',
   ]),
+);
+project.package.file.patch(JsonPatch.add('/jest/preset', 'ts-jest/presets/default-esm'));
+project.package.file.patch(JsonPatch.add('/jest/extensionsToTreatAsEsm', ['.ts']));
+project.package.file.patch(
+  JsonPatch.add('/jest/moduleNameMapper', {
+    '^(\\.{1,2}/.*)\\.js$': '$1',
+  }),
+);
+project.package.file.patch(
+  JsonPatch.replace('/jest/transform/^.+\\.[t]sx?$/1', {
+    tsconfig: 'tsconfig.dev.json',
+    useESM: true,
+  }),
 );
 
 project.package.file.patch(JsonPatch.add('/publishConfig', { access: 'public' }));

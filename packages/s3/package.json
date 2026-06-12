@@ -35,6 +35,9 @@
     "clean": "rm -rf lib tsconfig.tsbuildinfo",
     "package": "npm pack --pack-destination ../../dist/js"
   },
+  "dependencies": {
+    "@cdk-construct/core": "^0.1.0"
+  },
   "peerDependencies": {
     "aws-cdk-lib": "^2.258.1",
     "constructs": "^10.6.0"

@@ -5,20 +5,25 @@ S3 bucket constructs for AWS CDK with secure defaults, environment-aware retenti
 ## Install
 
 ```sh
-npm install @cdk-construct/s3
+npm install @cdk-construct/s3 @cdk-construct/core
 ```
 
 ## Quick Start
 
 ```ts
 import { Stack } from 'aws-cdk-lib';
-import { S3Bucket, BucketEnvironment } from '@cdk-construct/s3';
+import { EnvironmentName } from '@cdk-construct/core';
+import { S3Bucket } from '@cdk-construct/s3';
 
 const stack = new Stack();
 
 new S3Bucket(stack, 'Assets', {
   bucketName: 'my-assets-prod',
-  environment: BucketEnvironment.PRODUCTION,
+  env: {
+    name: EnvironmentName.PROD,
+    account: '123456789012',
+    region: 'us-east-1',
+  },
 });
 ```
 

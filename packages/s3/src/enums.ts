@@ -1,8 +1,18 @@
-export enum BucketEnvironment {
-  DEVELOPMENT = 'development',
-  STAGING = 'staging',
-  PRODUCTION = 'production',
-}
+import { EnvironmentName } from '@cdk-construct/core';
+
+/**
+ * @deprecated Use `EnvironmentName` from `@cdk-construct/core`.
+ */
+export const BucketEnvironment = {
+  DEVELOPMENT: EnvironmentName.DEV,
+  STAGING: EnvironmentName.STAGING,
+  PRODUCTION: EnvironmentName.PROD,
+} as const;
+
+/**
+ * @deprecated Use `EnvironmentName` from `@cdk-construct/core`.
+ */
+export type BucketEnvironment = (typeof BucketEnvironment)[keyof typeof BucketEnvironment];
 
 export enum StorageCostStrategy {
   NONE = 'none',

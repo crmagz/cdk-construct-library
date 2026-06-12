@@ -1,3 +1,5 @@
+import { isProductionEnvironment, resolveEnvironmentConfig } from '@cdk-construct/core';
+import type { EnvironmentInput } from '@cdk-construct/core';
 import { Duration, RemovalPolicy } from 'aws-cdk-lib';
 import type { PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { Key } from 'aws-cdk-lib/aws-kms';
@@ -9,7 +11,7 @@ import type {
 } from 'aws-cdk-lib/aws-s3';
 import { Construct } from 'constructs';
 
-import { BucketEnvironment, StorageCostStrategy } from './enums.js';
+import { StorageCostStrategy } from './enums.js';
 import type { S3BucketDefaults, S3BucketProps } from './types.js';
 
 const DEFAULT_INFREQUENT_ACCESS_AFTER = Duration.days(30);
@@ -18,11 +20,8 @@ const DEFAULT_DEEP_ARCHIVE_AFTER = Duration.days(180);
 const DEFAULT_NONCURRENT_EXPIRATION = Duration.days(30);
 const DEFAULT_ABORT_MULTIPART_AFTER = Duration.days(7);
 
-const isProduction = (environment: BucketEnvironment): boolean =>
-  environment === BucketEnvironment.PRODUCTION;
-
-const defaultsForEnvironment = (environment: BucketEnvironment): S3BucketDefaults => {
-  if (isProduction(environment)) {
+const defaultsForEnvironment = (environment: EnvironmentInput): S3BucketDefaults => {
+  if (isProductionEnvironment(environment)) {
     return {
       versioned: true,
       removalPolicy: RemovalPolicy.RETAIN,
@@ -37,8 +36,8 @@ const defaultsForEnvironment = (environment: BucketEnvironment): S3BucketDefault
   };
 };
 
-const defaultStorageCostStrategy = (environment: BucketEnvironment): StorageCostStrategy => {
-  return isProduction(environment)
+const defaultStorageCostStrategy = (environment: EnvironmentInput): StorageCostStrategy => {
+  return isProductionEnvironment(environment)
     ? StorageCostStrategy.INTELLIGENT_TIERING
     : StorageCostStrategy.INFREQUENT_ACCESS;
 };
@@ -140,10 +139,10 @@ const addResourcePolicies = (
 export class S3Bucket extends Construct {
   public readonly bucket: Bucket;
 
-  public constructor(scope: Construct, id: string, props: S3BucketProps = {}) {
+  public constructor(scope: Construct, id: string, props: S3BucketProps) {
     super(scope, id);
 
-    const environment = props.environment ?? BucketEnvironment.PRODUCTION;
+    const environment = resolveEnvironmentConfig(props);
     const defaults = defaultsForEnvironment(environment);
     const versioned = props.versioned ?? defaults.versioned;
     const storageCostStrategy =
@@ -177,6 +176,6 @@ export class S3Bucket extends Construct {
   }
 }
 
-export const createS3Bucket = (scope: Construct, id: string, props: S3BucketProps = {}): Bucket => {
+export const createS3Bucket = (scope: Construct, id: string, props: S3BucketProps): Bucket => {
   return new S3Bucket(scope, id, props).bucket;
 };

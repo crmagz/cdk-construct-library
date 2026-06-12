@@ -33,7 +33,12 @@
     "skipLibCheck": true,
     "declarationMap": true,
     "verbatimModuleSyntax": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+    "paths": {
+      "@cdk-construct/core": [
+        "packages/core/src/index.ts"
+      ]
+    }
   },
   "include": [
     "src/**/*.ts",

@@ -15,6 +15,11 @@
       "type": "build"
     },
     {
+      "name": "aws-cdk",
+      "version": "2.1126.0",
+      "type": "build"
+    },
+    {
       "name": "constructs",
       "version": "10.4.0",
       "type": "build"

@@ -1,9 +1,28 @@
+import { EnvironmentName } from '@cdk-construct/core';
 import { Duration, RemovalPolicy, Stack } from 'aws-cdk-lib';
 import { Match, Template } from 'aws-cdk-lib/assertions';
 import { AccountPrincipal, Effect, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { Bucket, HttpMethods } from 'aws-cdk-lib/aws-s3';
 
-import { BucketEnvironment, S3Bucket, StorageCostStrategy, createS3Bucket } from '../src/index.js';
+import { S3Bucket, StorageCostStrategy, createS3Bucket } from '../src/index.js';
+
+const prodEnv = {
+  name: EnvironmentName.PROD,
+  account: '123456789012',
+  region: 'us-east-1',
+};
+
+const devEnv = {
+  name: EnvironmentName.DEV,
+  account: '123456789012',
+  region: 'us-east-1',
+};
+
+const stagingEnv = {
+  name: EnvironmentName.STAGING,
+  account: '123456789012',
+  region: 'us-east-1',
+};
 
 const synthesizeBucket = (bucket: S3Bucket): Template => {
   return Template.fromStack(Stack.of(bucket));
@@ -13,6 +32,7 @@ describe('S3Bucket', () => {
   it('creates a production bucket with secure retained defaults', () => {
     const stack = new Stack();
     const bucket = new S3Bucket(stack, 'LogsBucket', {
+      env: prodEnv,
       bucketName: 'app-logs-prod',
     });
 
@@ -82,7 +102,7 @@ describe('S3Bucket', () => {
     const stack = new Stack();
     const bucket = new S3Bucket(stack, 'ArtifactsBucket', {
       bucketName: 'app-artifacts-dev',
-      environment: BucketEnvironment.DEVELOPMENT,
+      env: devEnv,
     });
 
     const template = synthesizeBucket(bucket);
@@ -112,9 +132,23 @@ describe('S3Bucket', () => {
     });
   });
 
+  it('accepts shared environment config objects', () => {
+    const stack = new Stack();
+    const bucket = new S3Bucket(stack, 'ConfigBucket', {
+      env: stagingEnv,
+    });
+
+    const template = synthesizeBucket(bucket);
+    template.hasResource('AWS::S3::Bucket', {
+      DeletionPolicy: 'Delete',
+      UpdateReplacePolicy: 'Delete',
+    });
+  });
+
   it('supports archive tier lifecycle transitions', () => {
     const stack = new Stack();
     const bucket = new S3Bucket(stack, 'ArchiveBucket', {
+      env: prodEnv,
       bucketName: 'app-archive-prod',
       storageCostStrategy: StorageCostStrategy.ARCHIVE,
       transitionToInfrequentAccessAfter: Duration.days(45),
@@ -145,6 +179,7 @@ describe('S3Bucket', () => {
   it('supports intelligent tiering archive tiers', () => {
     const stack = new Stack();
     const bucket = new S3Bucket(stack, 'TieredBucket', {
+      env: prodEnv,
       storageCostStrategy: StorageCostStrategy.INTELLIGENT_TIERING_ARCHIVE,
       intelligentTieringArchiveAccessAfter: Duration.days(90),
       intelligentTieringDeepArchiveAccessAfter: Duration.days(365),
@@ -174,6 +209,7 @@ describe('S3Bucket', () => {
   it('supports KMS encryption and CORS rules', () => {
     const stack = new Stack();
     const bucket = new S3Bucket(stack, 'WebBucket', {
+      env: prodEnv,
       encryptionKeyArn: 'arn:aws:kms:us-east-1:123456789012:key/example',
       cors: [
         {
@@ -211,6 +247,7 @@ describe('S3Bucket', () => {
   it('attaches resource policy statements', () => {
     const stack = new Stack();
     const bucket = new S3Bucket(stack, 'SharedBucket', {
+      env: prodEnv,
       bucketName: 'shared-data-prod',
       resourcePolicyStatements: [
         new PolicyStatement({
@@ -239,6 +276,7 @@ describe('S3Bucket', () => {
   it('allows explicit CDK bucket overrides', () => {
     const stack = new Stack();
     const bucket = new S3Bucket(stack, 'OverrideBucket', {
+      env: prodEnv,
       removalPolicy: RemovalPolicy.DESTROY,
       bucketOverrides: {
         versioned: false,
@@ -255,7 +293,9 @@ describe('S3Bucket', () => {
 describe('createS3Bucket', () => {
   it('returns the underlying bucket construct', () => {
     const stack = new Stack();
-    const bucket = createS3Bucket(stack, 'Bucket');
+    const bucket = createS3Bucket(stack, 'Bucket', {
+      env: prodEnv,
+    });
 
     expect(bucket).toBeInstanceOf(Bucket);
   });

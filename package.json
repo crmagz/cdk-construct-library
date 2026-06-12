@@ -120,6 +120,7 @@
       ".ts"
     ],
     "moduleNameMapper": {
+      "^@cdk-construct/core$": "<rootDir>/packages/core/src/index.ts",
       "^(\\.{1,2}/.*)\\.js$": "$1"
     }
   },

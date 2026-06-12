@@ -161,6 +161,9 @@ const project = new typescript.TypeScriptProject({
   tsconfigDev: {
     compilerOptions: {
       isolatedModules: true,
+      paths: {
+        [corePackageName]: ['packages/core/src/index.ts'],
+      },
     },
     include: ['packages/*/src/**/*.ts', 'packages/*/test/**/*.ts', '.projenrc.ts'],
   },
@@ -390,6 +393,9 @@ new JsonFile(project, 'packages/s3/package.json', {
       build: 'tsc -p tsconfig.json',
       clean: 'rm -rf lib tsconfig.tsbuildinfo',
       package: 'npm pack --pack-destination ../../dist/js',
+    },
+    dependencies: {
+      [corePackageName]: `^${packageVersion('packages/core/package.json')}`,
     },
     peerDependencies: {
       'aws-cdk-lib': awsCdkLibPeerVersion,
@@ -761,6 +767,7 @@ project.package.file.patch(JsonPatch.add('/jest/preset', 'ts-jest/presets/defaul
 project.package.file.patch(JsonPatch.add('/jest/extensionsToTreatAsEsm', ['.ts']));
 project.package.file.patch(
   JsonPatch.add('/jest/moduleNameMapper', {
+    [`^${corePackageName}$`]: '<rootDir>/packages/core/src/index.ts',
     '^(\\.{1,2}/.*)\\.js$': '$1',
   }),
 );

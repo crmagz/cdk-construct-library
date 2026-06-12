@@ -1,6 +1,6 @@
 {
   "name": "@cdk-construct/aurora",
-  "version": "0.0.0",
+  "version": "0.3.0",
   "description": "Aurora PostgreSQL and MySQL constructs for AWS CDK",
   "repository": {
     "type": "git",

@@ -2,12 +2,13 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 const root = process.cwd();
 const packageRoot = join(root, 'packages');
 const dryRun = process.env.DRY_RUN === 'true';
 
-const releaseTypes = {
+export const releaseTypes = {
   none: 0,
   patch: 1,
   minor: 2,
@@ -43,7 +44,7 @@ function run(command, args, options = {}) {
   }
 }
 
-function parseVersion(version) {
+export function parseVersion(version) {
   const match = version.match(/^(\d+)\.(\d+)\.(\d+)$/);
   if (!match) {
     throw new Error(`Unsupported semver version: ${version}`);
@@ -52,7 +53,7 @@ function parseVersion(version) {
   return match.slice(1).map((part) => Number(part));
 }
 
-function compareVersions(left, right) {
+export function compareVersions(left, right) {
   const a = parseVersion(left);
   const b = parseVersion(right);
 
@@ -65,7 +66,7 @@ function compareVersions(left, right) {
   return 0;
 }
 
-function incrementVersion(version, releaseType) {
+export function incrementVersion(version, releaseType) {
   const [major, minor, patch] = parseVersion(version);
 
   if (releaseType === 'major') {
@@ -83,7 +84,7 @@ function incrementVersion(version, releaseType) {
   throw new Error(`Unsupported release type: ${releaseType}`);
 }
 
-function serviceName(packageName) {
+export function serviceName(packageName) {
   const prefix = '@cdk-construct/';
 
   if (!packageName.startsWith(prefix)) {
@@ -118,7 +119,7 @@ function latestTag(service) {
   return tags.split('\n').find(Boolean);
 }
 
-function tagVersion(tag) {
+export function tagVersion(tag) {
   const match = tag?.match(/\/v(\d+\.\d+\.\d+)$/);
   return match?.[1];
 }
@@ -180,10 +181,10 @@ function commitsForPackage(relativePath, latestServiceTag) {
     });
 }
 
-function releaseTypeForCommit(commit) {
-  const header = commit.subject.match(/^(\w+)(?:\(([^)]+)\))?(!)?:\s+(.+)$/);
+export function releaseTypeForCommit(commit) {
+  const header = commit.subject.match(/^(\w+)(!)?(?:\(([^)]+)\))?(!)?:\s+(.+)$/);
 
-  if (commit.body.includes('BREAKING CHANGE') || header?.[3]) {
+  if (commit.body.includes('BREAKING CHANGE') || header?.[2] || header?.[4]) {
     return 'major';
   }
 
@@ -204,14 +205,14 @@ function releaseTypeForCommit(commit) {
   return 'none';
 }
 
-function releaseTypeForCommits(commits) {
+export function releaseTypeForCommits(commits) {
   return commits.reduce((current, commit) => {
     const next = releaseTypeForCommit(commit);
     return releaseTypes[next] > releaseTypes[current] ? next : current;
   }, 'none');
 }
 
-function releaseNotes(workspace, version, commits) {
+export function releaseNotes(workspace, version, commits) {
   const lines = [
     `## ${workspace.packageJson.name} ${version}`,
     '',
@@ -285,37 +286,54 @@ function publishRelease(workspace, version, commits) {
   ]);
 }
 
-const workspaces = getWorkspacePackages();
-const releasable = [];
+export function createReleasePlan(
+  workspaces,
+  {
+    latestTagForService = latestTag,
+    commitsForPackagePath = commitsForPackage,
+    baseVersionForWorkspace = baseVersion,
+    log = console.log,
+  } = {},
+) {
+  const releasable = [];
 
-for (const workspace of workspaces) {
-  if (!existsSync(workspace.directory)) {
-    continue;
+  for (const workspace of workspaces) {
+    if (!existsSync(workspace.directory)) {
+      continue;
+    }
+
+    const tag = latestTagForService(workspace.service);
+    const commits = commitsForPackagePath(workspace.relativePath, tag);
+    const releaseType = releaseTypeForCommits(commits);
+
+    if (releaseType === 'none') {
+      log(`${workspace.packageJson.name}: no releasable commits`);
+      continue;
+    }
+
+    const fromVersion = baseVersionForWorkspace(workspace, tag);
+    const toVersion = incrementVersion(fromVersion, releaseType);
+    releasable.push({ commits, fromVersion, releaseType, toVersion, workspace });
+
+    log(`${workspace.packageJson.name}: ${releaseType} release ${fromVersion} -> ${toVersion}`);
   }
 
-  const tag = latestTag(workspace.service);
-  const commits = commitsForPackage(workspace.relativePath, tag);
-  const releaseType = releaseTypeForCommits(commits);
+  return releasable;
+}
 
-  if (releaseType === 'none') {
-    console.log(`${workspace.packageJson.name}: no releasable commits`);
-    continue;
+export function main() {
+  const releasable = createReleasePlan(getWorkspacePackages());
+
+  if (releasable.length === 0) {
+    console.log('No workspace packages have releasable conventional commits.');
+    return;
   }
 
-  const fromVersion = baseVersion(workspace, tag);
-  const toVersion = incrementVersion(fromVersion, releaseType);
-  releasable.push({ commits, releaseType, toVersion, workspace });
-
-  console.log(
-    `${workspace.packageJson.name}: ${releaseType} release ${fromVersion} -> ${toVersion}`,
-  );
+  for (const release of releasable) {
+    publishRelease(release.workspace, release.toVersion, release.commits);
+  }
 }
 
-if (releasable.length === 0) {
-  console.log('No workspace packages have releasable conventional commits.');
-  process.exit(0);
-}
-
-for (const release of releasable) {
-  publishRelease(release.workspace, release.toVersion, release.commits);
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main();
 }

@@ -652,6 +652,9 @@ project.tasks
   ?.exec('npm_config_cache=.npm-cache npm pack --workspaces --pack-destination dist/js');
 
 project.tasks.tryFind('compile')?.reset('npm run build --workspaces --if-present');
+project.tasks
+  .tryFind('test')
+  ?.reset('node --test "scripts/*.test.mjs" && jest --passWithNoTests --updateSnapshot');
 
 project.package.setScript('lint', 'projen lint');
 project.package.setScript('format', 'projen format');

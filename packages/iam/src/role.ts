@@ -29,6 +29,24 @@ const normalizeOidcProviderUrl = (oidcProviderUrl: string): string => {
   return normalizedOidcProviderUrl;
 };
 
+const normalizeRequiredValue = (value: string, propertyName: string): string => {
+  const normalizedValue = value.trim();
+
+  if (!normalizedValue) {
+    throw new Error(`IrsaRole ${propertyName} is required.`);
+  }
+
+  return normalizedValue;
+};
+
+const normalizeNamespace = (props: IrsaRoleProps): string => {
+  return normalizeRequiredValue(props.namespace, 'namespace');
+};
+
+const normalizeServiceAccountName = (props: IrsaRoleProps): string => {
+  return normalizeRequiredValue(props.serviceAccountName, 'serviceAccountName');
+};
+
 const createOidcProviderArn = (scope: Construct, props: IrsaRoleProps): string => {
   const environment = resolveEnvironmentConfig(props);
   const oidcProviderUrl = normalizeOidcProviderUrl(props.oidcProviderUrl);
@@ -41,7 +59,7 @@ const createOidcProviderArn = (scope: Construct, props: IrsaRoleProps): string =
 };
 
 const createServiceAccountSubject = (props: IrsaRoleProps): string => {
-  return `system:serviceaccount:${props.namespace}:${props.serviceAccountName}`;
+  return `system:serviceaccount:${normalizeNamespace(props)}:${normalizeServiceAccountName(props)}`;
 };
 
 const createIrsaAssumeRolePrincipal = (scope: Construct, props: IrsaRoleProps): IPrincipal => {
@@ -62,7 +80,7 @@ const createIrsaAssumeRolePrincipal = (scope: Construct, props: IrsaRoleProps): 
 const resolveRoleName = (props: IrsaRoleProps): string => {
   const environment = resolveEnvironmentConfig(props);
 
-  return props.roleName ?? `${props.serviceAccountName}-${environment.name}`;
+  return props.roleName ?? `${normalizeServiceAccountName(props)}-${environment.name}`;
 };
 
 const assertTrustedPrincipalOverridesAreNotUsed = (props: IrsaRoleProps): void => {

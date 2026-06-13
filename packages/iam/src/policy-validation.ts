@@ -8,6 +8,7 @@ export enum IamPolicyValidationFindingCode {
   NOT_RESOURCE = 'NOT_RESOURCE',
   WILDCARD_ACTION = 'WILDCARD_ACTION',
   WILDCARD_RESOURCE = 'WILDCARD_RESOURCE',
+  PRINCIPAL_NOT_ALLOWED = 'PRINCIPAL_NOT_ALLOWED',
   WILDCARD_PRINCIPAL = 'WILDCARD_PRINCIPAL',
   ROOT_PRINCIPAL = 'ROOT_PRINCIPAL',
 }
@@ -131,6 +132,14 @@ const validateStatement = (
   const notResources = toArray(statementJson.NotResource);
   const principalValues = findPrincipalValues(statementJson.Principal);
   const principalObjects = findPrincipalObjects(statement);
+
+  if (principalValues.length > 0 || principalObjects.length > 0) {
+    findings.push({
+      code: IamPolicyValidationFindingCode.PRINCIPAL_NOT_ALLOWED,
+      message: 'Principals are not allowed in identity-based role policy statements.',
+      statementIndex,
+    });
+  }
 
   if (!statementJson.Sid?.trim()) {
     findings.push({

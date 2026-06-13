@@ -41,6 +41,20 @@
       }
     },
     {
+      "name": "api-gateway",
+      "path": "packages/api-gateway",
+      "changelog": "packages/api-gateway/CHANGELOG.md",
+      "versionedFiles": [
+        {
+          "path": "packages/api-gateway/package.json",
+          "format": "json"
+        }
+      ],
+      "hooks": {
+        "postPublish": "npm run build --workspace @cdk-construct/api-gateway && npm publish --workspace @cdk-construct/api-gateway --access public"
+      }
+    },
+    {
       "name": "s3",
       "path": "packages/s3",
       "changelog": "packages/s3/CHANGELOG.md",

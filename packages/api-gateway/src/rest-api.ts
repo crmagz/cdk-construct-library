@@ -1,0 +1,204 @@
+import { isProductionEnvironment, resolveEnvironmentConfig } from '@cdk-construct/core';
+import { RemovalPolicy } from 'aws-cdk-lib';
+import {
+  AccessLogFormat,
+  AuthorizationType,
+  EndpointType,
+  LogGroupLogDestination,
+  MethodLoggingLevel,
+  RequestValidator,
+  RestApi,
+} from 'aws-cdk-lib/aws-apigateway';
+import type { StageOptions } from 'aws-cdk-lib/aws-apigateway';
+import { LogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs';
+import type { ILogGroup } from 'aws-cdk-lib/aws-logs';
+import { Construct } from 'constructs';
+
+import type {
+  ApiGatewayRestApiDefaults,
+  ApiGatewayRestApiProps,
+  ApiGatewayRestApiResources,
+  CreateApiGatewayRestApiResourceProps,
+  RestApiAccessLogGroupResourceProps,
+  RestApiRequestValidatorResourceProps,
+  RestApiResourceProps,
+} from './types.js';
+
+const DEFAULT_PROD_LOG_RETENTION = RetentionDays.ONE_YEAR;
+const DEFAULT_NON_PROD_LOG_RETENTION = RetentionDays.ONE_MONTH;
+const DEFAULT_PROD_THROTTLING_BURST_LIMIT = 1_000;
+const DEFAULT_NON_PROD_THROTTLING_BURST_LIMIT = 200;
+const DEFAULT_PROD_THROTTLING_RATE_LIMIT = 500;
+const DEFAULT_NON_PROD_THROTTLING_RATE_LIMIT = 100;
+
+const defaultsForEnvironment = (props: ApiGatewayRestApiProps): ApiGatewayRestApiDefaults => {
+  const environment = resolveEnvironmentConfig(props);
+  const production = isProductionEnvironment(environment);
+
+  return {
+    stageName: environment.name,
+    logRetention: production ? DEFAULT_PROD_LOG_RETENTION : DEFAULT_NON_PROD_LOG_RETENTION,
+    logRemovalPolicy: production ? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY,
+    tracingEnabled: true,
+    metricsEnabled: true,
+    throttlingBurstLimit: production
+      ? DEFAULT_PROD_THROTTLING_BURST_LIMIT
+      : DEFAULT_NON_PROD_THROTTLING_BURST_LIMIT,
+    throttlingRateLimit: production
+      ? DEFAULT_PROD_THROTTLING_RATE_LIMIT
+      : DEFAULT_NON_PROD_THROTTLING_RATE_LIMIT,
+  };
+};
+
+const resolveStageName = (
+  props: ApiGatewayRestApiProps,
+  defaults: ApiGatewayRestApiDefaults,
+): string => {
+  return props.stageName ?? defaults.stageName;
+};
+
+const resolveAccessLogGroupName = (
+  props: ApiGatewayRestApiProps,
+  defaults: ApiGatewayRestApiDefaults,
+): string => {
+  return (
+    props.accessLogGroupName ??
+    `/aws/apigateway/${props.apiName}/${resolveStageName(props, defaults)}`
+  );
+};
+
+const createAccessLogFormat = (props: ApiGatewayRestApiProps): AccessLogFormat => {
+  return (
+    props.accessLogFormat ??
+    AccessLogFormat.jsonWithStandardFields({
+      caller: false,
+      httpMethod: true,
+      ip: true,
+      protocol: true,
+      requestTime: true,
+      resourcePath: true,
+      responseLength: true,
+      status: true,
+      user: true,
+    })
+  );
+};
+
+const createDeployOptions = (
+  props: ApiGatewayRestApiProps,
+  defaults: ApiGatewayRestApiDefaults,
+  accessLogGroup: ILogGroup,
+): StageOptions => {
+  return {
+    stageName: resolveStageName(props, defaults),
+    accessLogDestination: new LogGroupLogDestination(accessLogGroup),
+    accessLogFormat: createAccessLogFormat(props),
+    tracingEnabled: props.tracingEnabled ?? defaults.tracingEnabled,
+    metricsEnabled: props.metricsEnabled ?? defaults.metricsEnabled,
+    loggingLevel: MethodLoggingLevel.INFO,
+    dataTraceEnabled: false,
+    throttlingBurstLimit: props.throttlingBurstLimit ?? defaults.throttlingBurstLimit,
+    throttlingRateLimit: props.throttlingRateLimit ?? defaults.throttlingRateLimit,
+    ...props.deployOptions,
+  };
+};
+
+export class ApiGatewayRestApi extends Construct {
+  public readonly api: RestApi;
+  public readonly accessLogGroup: LogGroup;
+  public readonly requestValidator: RequestValidator;
+
+  public constructor(scope: Construct, id: string, props: ApiGatewayRestApiProps) {
+    super(scope, id);
+
+    const resources = createApiGatewayRestApiResources({
+      scope: this,
+      id: 'Resource',
+      props,
+    });
+
+    this.api = resources.api;
+    this.accessLogGroup = resources.accessLogGroup;
+    this.requestValidator = resources.requestValidator;
+  }
+}
+
+export const createRestApiAccessLogGroupResource = (
+  resourceProps: RestApiAccessLogGroupResourceProps,
+): LogGroup => {
+  const { scope, id, props, defaults } = resourceProps;
+
+  return new LogGroup(scope, `${id}AccessLogs`, {
+    logGroupName: resolveAccessLogGroupName(props, defaults),
+    retention: props.logRetention ?? defaults.logRetention,
+    removalPolicy: props.logRemovalPolicy ?? defaults.logRemovalPolicy,
+    ...props.accessLogGroupOverrides,
+  });
+};
+
+export const createRestApiResource = (resourceProps: RestApiResourceProps): RestApi => {
+  const { scope, id, props, defaults, accessLogGroup } = resourceProps;
+
+  return new RestApi(scope, `${id}Api`, {
+    restApiName: props.apiName,
+    description: props.description,
+    cloudWatchRole: true,
+    defaultMethodOptions: {
+      authorizationType: AuthorizationType.IAM,
+    },
+    endpointConfiguration: {
+      types: [EndpointType.REGIONAL],
+    },
+    deployOptions: createDeployOptions(props, defaults, accessLogGroup),
+    ...props.restApiOverrides,
+  });
+};
+
+export const createRestApiRequestValidatorResource = (
+  resourceProps: RestApiRequestValidatorResourceProps,
+): RequestValidator => {
+  const { scope, id, api } = resourceProps;
+
+  return new RequestValidator(scope, `${id}RequestValidator`, {
+    restApi: api,
+    requestValidatorName: `${api.restApiName}-default-validator`,
+    validateRequestBody: true,
+    validateRequestParameters: true,
+  });
+};
+
+export const createApiGatewayRestApiResources = (
+  resourceProps: CreateApiGatewayRestApiResourceProps,
+): ApiGatewayRestApiResources => {
+  const defaults = defaultsForEnvironment(resourceProps.props);
+  const accessLogGroup = createRestApiAccessLogGroupResource({
+    ...resourceProps,
+    defaults,
+  });
+  const api = createRestApiResource({
+    ...resourceProps,
+    defaults,
+    accessLogGroup,
+  });
+  const requestValidator = createRestApiRequestValidatorResource({
+    ...resourceProps,
+    defaults,
+    api,
+  });
+
+  return { api, accessLogGroup, requestValidator };
+};
+
+export const createApiGatewayRestApi = (
+  scope: Construct,
+  id: string,
+  props: ApiGatewayRestApiProps,
+): ApiGatewayRestApiResources => {
+  const restApi = new ApiGatewayRestApi(scope, id, props);
+
+  return {
+    api: restApi.api,
+    accessLogGroup: restApi.accessLogGroup,
+    requestValidator: restApi.requestValidator,
+  };
+};

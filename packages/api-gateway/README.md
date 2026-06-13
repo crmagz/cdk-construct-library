@@ -1,7 +1,9 @@
 # @cdk-construct/api-gateway
 
-API Gateway constructs for AWS CDK.
+Environment-aware API Gateway REST API constructs for AWS CDK.
 
-## Status
+## Overview
 
-This package is scaffolded for Amazon API Gateway construct development. The implementation will establish the public construct API before the package is added to the release workflow.
+`ApiGatewayRestApi` creates a regional REST API with CloudWatch access logs, X-Ray tracing, execution metrics, and environment-aware log retention defaults. Direct CDK overrides are available for the REST API, deployment stage, and access log group when a workload needs service-specific control.
+
+See [docs/rest-api.md](./docs/rest-api.md) for configuration and stack usage examples.

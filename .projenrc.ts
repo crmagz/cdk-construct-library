@@ -340,7 +340,7 @@ new JsonFile(project, 'packages/aurora/package.json', {
         import: './lib/index.js',
       },
     },
-    files: ['lib', 'README.md'],
+    files: ['lib', 'README.md', 'docs'],
     sideEffects: false,
     publishConfig: {
       access: 'public',
@@ -349,6 +349,9 @@ new JsonFile(project, 'packages/aurora/package.json', {
       build: 'tsc -p tsconfig.json',
       clean: 'rm -rf lib tsconfig.tsbuildinfo',
       package: 'npm pack --pack-destination ../../dist/js',
+    },
+    dependencies: {
+      [corePackageName]: '^0.2.0',
     },
     peerDependencies: {
       'aws-cdk-lib': awsCdkLibPeerVersion,

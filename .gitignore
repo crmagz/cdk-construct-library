@@ -57,6 +57,7 @@ junit.xml
 !/.github/ISSUE_TEMPLATE/feature_request.yml
 !/.github/ISSUE_TEMPLATE/config.yml
 !/eslint.config.js
+!/lefthook.yml
 /.npm-cache/
 /packages/*/lib/
 /.CLAUDE/

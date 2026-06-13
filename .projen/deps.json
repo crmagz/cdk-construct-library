@@ -20,6 +20,11 @@
       "type": "build"
     },
     {
+      "name": "cdk-nag",
+      "version": "3.0.0",
+      "type": "build"
+    },
+    {
       "name": "constructs",
       "version": "10.6.0",
       "type": "build"
@@ -41,6 +46,11 @@
     {
       "name": "jest-junit",
       "version": "^17",
+      "type": "build"
+    },
+    {
+      "name": "lefthook",
+      "version": "2.1.9",
       "type": "build"
     },
     {

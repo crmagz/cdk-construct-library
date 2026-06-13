@@ -37,6 +37,7 @@ Resolves:
 - [ ] Tests added/updated in `test/`
 - [ ] `npm run lint`
 - [ ] `npm run format:check`
+- [ ] `npm run security`
 - [ ] `npm run build`
 
 ## Checklist

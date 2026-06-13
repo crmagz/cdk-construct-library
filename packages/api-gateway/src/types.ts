@@ -11,7 +11,16 @@ import type {
 import type { ILogGroup, LogGroup, LogGroupProps, RetentionDays } from 'aws-cdk-lib/aws-logs';
 import type { Construct } from 'constructs';
 
-export type RestApiOverrides = Omit<CdkOverrides<RestApiProps>, 'endpointConfiguration'> & {
+type ConstructOwnedRestApiOverrideKey =
+  | 'deployOptions'
+  | 'description'
+  | 'endpointConfiguration'
+  | 'restApiName';
+
+export type RestApiOverrides = Omit<
+  CdkOverrides<RestApiProps>,
+  ConstructOwnedRestApiOverrideKey
+> & {
   readonly endpointConfiguration?: Partial<EndpointConfiguration>;
 };
 

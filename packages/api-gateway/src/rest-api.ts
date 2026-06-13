@@ -12,6 +12,7 @@ import {
 import type {
   EndpointConfiguration,
   MethodOptions,
+  RestApiProps,
   StageOptions,
 } from 'aws-cdk-lib/aws-apigateway';
 import { LogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs';
@@ -26,6 +27,7 @@ import type {
   RestApiAccessLogGroupResourceProps,
   RestApiRequestValidatorResourceProps,
   RestApiResourceProps,
+  RestApiOverrides,
 } from './types.js';
 
 const DEFAULT_PROD_LOG_RETENTION = RetentionDays.ONE_YEAR;
@@ -121,6 +123,24 @@ const createEndpointConfiguration = (props: ApiGatewayRestApiProps): EndpointCon
   };
 };
 
+type UnsafeRestApiOverrides = RestApiOverrides &
+  Partial<Pick<RestApiProps, 'deployOptions' | 'description' | 'restApiName'>>;
+
+const sanitizeRestApiOverrides = (
+  overrides: ApiGatewayRestApiProps['restApiOverrides'],
+): RestApiOverrides | undefined => {
+  if (!overrides) {
+    return undefined;
+  }
+
+  const safeOverrides = { ...(overrides as UnsafeRestApiOverrides) };
+  delete safeOverrides.deployOptions;
+  delete safeOverrides.description;
+  delete safeOverrides.restApiName;
+
+  return safeOverrides;
+};
+
 export class ApiGatewayRestApi extends Construct {
   public readonly api: RestApi;
   public readonly accessLogGroup: LogGroup;
@@ -158,11 +178,11 @@ export const createRestApiResource = (resourceProps: RestApiResourceProps): Rest
   const { scope, id, props, defaults, accessLogGroup } = resourceProps;
 
   return new RestApi(scope, `${id}Api`, {
+    ...sanitizeRestApiOverrides(props.restApiOverrides),
     restApiName: props.apiName,
     description: props.description,
     cloudWatchRole: true,
     deployOptions: createDeployOptions(props, defaults, accessLogGroup),
-    ...props.restApiOverrides,
     defaultMethodOptions: createDefaultMethodOptions(props),
     endpointConfiguration: createEndpointConfiguration(props),
   });

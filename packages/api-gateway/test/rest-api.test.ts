@@ -11,6 +11,7 @@ import {
 import { RetentionDays } from 'aws-cdk-lib/aws-logs';
 
 import { ApiGatewayRestApi, createApiGatewayRestApi } from '../src/index.js';
+import type { ApiGatewayRestApiProps } from '../src/index.js';
 
 const prodEnv = {
   name: EnvironmentName.PROD,
@@ -221,6 +222,54 @@ describe('ApiGatewayRestApi', () => {
         IpAddressType: 'dualstack',
         Types: ['REGIONAL'],
       },
+    });
+  });
+
+  it('ignores construct-owned restApiOverrides keys from unsafe callers', () => {
+    const stack = new Stack();
+    const unsafeRestApiOverrides = {
+      restApiName: 'unsafe-api-name',
+      description: 'Unsafe description',
+      deployOptions: {
+        stageName: 'unsafe-stage',
+        tracingEnabled: false,
+        metricsEnabled: false,
+        throttlingBurstLimit: 9_999,
+        throttlingRateLimit: 9_999,
+      },
+      defaultMethodOptions: {
+        apiKeyRequired: true,
+      },
+      disableExecuteApiEndpoint: true,
+    } as unknown as ApiGatewayRestApiProps['restApiOverrides'];
+    const api = new ApiGatewayRestApi(stack, 'SafeOverridesApi', {
+      env: devEnv,
+      apiName: 'owned-api-name',
+      description: 'Owned description',
+      restApiOverrides: unsafeRestApiOverrides,
+    });
+    addMockGetMethod(api.api, api.requestValidator);
+
+    const template = synthesizeRestApi(api);
+    template.hasResourceProperties('AWS::ApiGateway::RestApi', {
+      Name: 'owned-api-name',
+      Description: 'Owned description',
+      DisableExecuteApiEndpoint: true,
+    });
+    template.hasResourceProperties('AWS::ApiGateway::Stage', {
+      StageName: 'dev',
+      TracingEnabled: true,
+      MethodSettings: [
+        Match.objectLike({
+          MetricsEnabled: true,
+          ThrottlingBurstLimit: 200,
+          ThrottlingRateLimit: 100,
+        }),
+      ],
+    });
+    template.hasResourceProperties('AWS::ApiGateway::Method', {
+      AuthorizationType: 'AWS_IAM',
+      ApiKeyRequired: true,
     });
   });
 

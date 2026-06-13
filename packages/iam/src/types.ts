@@ -4,7 +4,10 @@ import type { Construct } from 'constructs';
 
 import type { IamPolicyValidationOptions } from './policy-validation.js';
 
-export type IrsaRoleOverrides = Omit<RoleProps, 'assumedBy' | 'inlinePolicies' | 'managedPolicies'>;
+export type IrsaRoleOverrides = Omit<
+  RoleProps,
+  'assumedBy' | 'inlinePolicies' | 'managedPolicies' | 'roleName'
+>;
 
 export type IrsaRoleProps = EnvironmentAwareProps & {
   readonly serviceAccountName: string;

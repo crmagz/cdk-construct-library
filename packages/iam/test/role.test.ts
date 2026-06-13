@@ -290,6 +290,25 @@ describe('IrsaRole', () => {
     });
   });
 
+  it('uses the dedicated role name over unsafe role override names', () => {
+    const stack = new Stack();
+    const role = new IrsaRole(
+      stack,
+      'RoleNameOverrideRole',
+      defaultProps({
+        roleName: 'orders-irsa',
+        roleOverrides: {
+          roleName: 'unsafe-override',
+        } as unknown as IrsaRoleProps['roleOverrides'],
+      }),
+    );
+
+    const template = synthesizeRole(role);
+    template.hasResourceProperties('AWS::IAM::Role', {
+      RoleName: 'orders-irsa',
+    });
+  });
+
   it('rejects wildcard policy actions by default', () => {
     const stack = new Stack();
 

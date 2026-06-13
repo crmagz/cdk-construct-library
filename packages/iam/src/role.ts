@@ -123,10 +123,10 @@ export const createIrsaRoleResource = (resourceProps: IrsaRoleResourceProps): Ir
   assertLeastPrivilegePolicyStatements(policyStatements, props.policyValidation);
 
   const role = new Role(scope, `${id}Role`, {
+    ...props.roleOverrides,
     assumedBy: createIrsaAssumeRolePrincipal(scope, props),
     roleName: resolveRoleName(props),
     managedPolicies: props.managedPolicies,
-    ...props.roleOverrides,
   });
 
   policyStatements.forEach((policyStatement) => {

@@ -113,6 +113,9 @@ ARN and condition keys. `env.account` is required because the OIDC provider ARN
 is account-scoped. The ARN uses the stack partition so the construct can
 synthesize correctly outside the commercial AWS partition.
 
+`namespace` and `serviceAccountName` are trimmed before the `sub` condition is
+generated. Empty values are rejected.
+
 The generated trust policy allows only:
 
 - `sts:AssumeRoleWithWebIdentity`
@@ -133,6 +136,8 @@ default validator rejects:
 - `Resource: "*"` without an explicit exception
 - `NotAction`
 - `NotResource`
+- any `Principal` element because statements are attached as identity-based role
+  policies
 - wildcard principals
 - account root principals
 

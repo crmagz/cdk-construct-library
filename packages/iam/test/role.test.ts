@@ -118,6 +118,63 @@ describe('IrsaRole', () => {
     });
   });
 
+  it('normalizes namespace and service account names in the trust policy', () => {
+    const stack = new Stack();
+    const role = new IrsaRole(
+      stack,
+      'NormalizedSubjectRole',
+      defaultProps({
+        namespace: ' orders ',
+        serviceAccountName: ' orders-api ',
+      }),
+    );
+
+    const template = synthesizeRole(role);
+    template.hasResourceProperties('AWS::IAM::Role', {
+      RoleName: 'orders-api-prod',
+      AssumeRolePolicyDocument: {
+        Statement: [
+          Match.objectLike({
+            Condition: {
+              StringEquals: {
+                'oidc.eks.us-east-1.amazonaws.com/id/EXAMPLE:sub':
+                  'system:serviceaccount:orders:orders-api',
+              },
+            },
+          }),
+        ],
+      },
+    });
+  });
+
+  it('rejects empty namespace values', () => {
+    const stack = new Stack();
+
+    expect(() => {
+      new IrsaRole(
+        stack,
+        'EmptyNamespaceRole',
+        defaultProps({
+          namespace: ' ',
+        }),
+      );
+    }).toThrow(/namespace is required/);
+  });
+
+  it('rejects empty service account names', () => {
+    const stack = new Stack();
+
+    expect(() => {
+      new IrsaRole(
+        stack,
+        'EmptyServiceAccountRole',
+        defaultProps({
+          serviceAccountName: ' ',
+        }),
+      );
+    }).toThrow(/serviceAccountName is required/);
+  });
+
   it('rejects OIDC provider URLs with http scheme', () => {
     const stack = new Stack();
 
@@ -468,6 +525,28 @@ describe('policy validation utilities', () => {
         }),
       );
     }).toThrow(/WILDCARD_PRINCIPAL/);
+  });
+
+  it('rejects any principals in identity-based role policy statements', () => {
+    const stack = new Stack();
+
+    expect(() => {
+      new IrsaRole(
+        stack,
+        'PrincipalPolicyRole',
+        defaultProps({
+          policyStatements: [
+            new PolicyStatement({
+              sid: 'ServicePrincipal',
+              effect: Effect.ALLOW,
+              actions: ['sts:AssumeRole'],
+              principals: [new ServicePrincipal('lambda.amazonaws.com')],
+              resources: ['arn:aws:iam::123456789012:role/orders'],
+            }),
+          ],
+        }),
+      );
+    }).toThrow(/PRINCIPAL_NOT_ALLOWED/);
   });
 });
 

@@ -57,8 +57,18 @@ describe('IrsaRole', () => {
             Action: 'sts:AssumeRoleWithWebIdentity',
             Effect: 'Allow',
             Principal: {
-              Federated:
-                'arn:aws:iam::123456789012:oidc-provider/oidc.eks.us-east-1.amazonaws.com/id/EXAMPLE',
+              Federated: {
+                'Fn::Join': [
+                  '',
+                  [
+                    'arn:',
+                    {
+                      Ref: 'AWS::Partition',
+                    },
+                    ':iam::123456789012:oidc-provider/oidc.eks.us-east-1.amazonaws.com/id/EXAMPLE',
+                  ],
+                ],
+              },
             },
             Condition: {
               StringEquals: {
@@ -89,8 +99,18 @@ describe('IrsaRole', () => {
         Statement: [
           Match.objectLike({
             Principal: {
-              Federated:
-                'arn:aws:iam::123456789012:oidc-provider/oidc.eks.us-east-1.amazonaws.com/id/EXAMPLE',
+              Federated: {
+                'Fn::Join': [
+                  '',
+                  [
+                    'arn:',
+                    {
+                      Ref: 'AWS::Partition',
+                    },
+                    ':iam::123456789012:oidc-provider/oidc.eks.us-east-1.amazonaws.com/id/EXAMPLE',
+                  ],
+                ],
+              },
             },
           }),
         ],
@@ -382,7 +402,7 @@ describe('policy validation utilities', () => {
           ],
         }),
       );
-    }).toThrow(/DUPLICATE_SID/);
+    }).toThrow(/DUPLICATE_SID statement 2.*first used by statement 1/);
   });
 
   it('rejects NotAction and NotResource statements', () => {

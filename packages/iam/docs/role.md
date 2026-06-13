@@ -110,7 +110,8 @@ environments.forEach((environment) => {
 `oidcProviderUrl` may include or omit `https://`. The construct trims it,
 removes trailing slashes, and rejects `http://` before generating the provider
 ARN and condition keys. `env.account` is required because the OIDC provider ARN
-is account-scoped.
+is account-scoped. The ARN uses the stack partition so the construct can
+synthesize correctly outside the commercial AWS partition.
 
 The generated trust policy allows only:
 

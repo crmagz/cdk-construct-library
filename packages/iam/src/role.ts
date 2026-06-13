@@ -1,4 +1,5 @@
 import { resolveEnvironmentConfig } from '@cdk-construct/core';
+import { Stack } from 'aws-cdk-lib';
 import { FederatedPrincipal, Role } from 'aws-cdk-lib/aws-iam';
 import type { IPrincipal } from 'aws-cdk-lib/aws-iam';
 import { Construct } from 'constructs';
@@ -28,7 +29,7 @@ const normalizeOidcProviderUrl = (oidcProviderUrl: string): string => {
   return normalizedOidcProviderUrl;
 };
 
-const createOidcProviderArn = (props: IrsaRoleProps): string => {
+const createOidcProviderArn = (scope: Construct, props: IrsaRoleProps): string => {
   const environment = resolveEnvironmentConfig(props);
   const oidcProviderUrl = normalizeOidcProviderUrl(props.oidcProviderUrl);
 
@@ -36,18 +37,18 @@ const createOidcProviderArn = (props: IrsaRoleProps): string => {
     throw new Error('IrsaRole requires props.env.account to build the OIDC provider ARN.');
   }
 
-  return `arn:aws:iam::${environment.account}:oidc-provider/${oidcProviderUrl}`;
+  return `arn:${Stack.of(scope).partition}:iam::${environment.account}:oidc-provider/${oidcProviderUrl}`;
 };
 
 const createServiceAccountSubject = (props: IrsaRoleProps): string => {
   return `system:serviceaccount:${props.namespace}:${props.serviceAccountName}`;
 };
 
-const createIrsaAssumeRolePrincipal = (props: IrsaRoleProps): IPrincipal => {
+const createIrsaAssumeRolePrincipal = (scope: Construct, props: IrsaRoleProps): IPrincipal => {
   const oidcProviderUrl = normalizeOidcProviderUrl(props.oidcProviderUrl);
 
   return new FederatedPrincipal(
-    createOidcProviderArn(props),
+    createOidcProviderArn(scope, props),
     {
       StringEquals: {
         [`${oidcProviderUrl}:aud`]: 'sts.amazonaws.com',
@@ -104,7 +105,7 @@ export const createIrsaRoleResource = (resourceProps: IrsaRoleResourceProps): Ir
   assertLeastPrivilegePolicyStatements(policyStatements, props.policyValidation);
 
   const role = new Role(scope, `${id}Role`, {
-    assumedBy: createIrsaAssumeRolePrincipal(props),
+    assumedBy: createIrsaAssumeRolePrincipal(scope, props),
     roleName: resolveRoleName(props),
     managedPolicies: props.managedPolicies,
     ...props.roleOverrides,

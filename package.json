@@ -20,6 +20,8 @@
     "post-compile": "projen post-compile",
     "pre-compile": "projen pre-compile",
     "security": "projen security",
+    "security:cdk-nag": "projen security:cdk-nag",
+    "security:checkov": "projen security:checkov",
     "test": "projen test",
     "test:watch": "projen test:watch",
     "watch": "projen watch",

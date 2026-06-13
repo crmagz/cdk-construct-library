@@ -28,6 +28,13 @@ jobs:
         run: npm ci
       - name: synth
         run: npx projen default
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: pip
+      - name: Install Checkov
+        run: python -m pip install checkov==3.3.1
       - name: format:check
         run: npm run format:check
       - name: lint

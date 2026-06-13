@@ -17,6 +17,7 @@ const nodeTypesVersion = '24.13.2';
 const typescriptVersion = '6.0.3';
 const cdkNagVersion = '3.0.0';
 const lefthookVersion = '2.1.9';
+const checkovVersion = '3.3.1';
 const awsCdkLibPeerVersion = `^${awsCdkLibVersion}`;
 const constructsPeerVersion = `^${constructsVersion}`;
 const conventionalCommitTypes = [
@@ -844,12 +845,22 @@ project.addTask('format:check', {
 
 project.addTask('clean', {
   description: 'Remove generated build artifacts',
-  exec: 'rm -rf lib packages/*/lib dist coverage test-reports .jsii .npm-cache tsconfig.tsbuildinfo packages/*/tsconfig.tsbuildinfo',
+  exec: 'rm -rf lib packages/*/lib dist coverage test-reports .jsii .npm-cache .checkov/cfn tsconfig.tsbuildinfo packages/*/tsconfig.tsbuildinfo',
+});
+
+project.addTask('security:cdk-nag', {
+  description: 'Run CDK security policy validation tests',
+  exec: 'NODE_OPTIONS=--experimental-vm-modules jest --testMatch "<rootDir>/packages/*/test/**/*.security.test.ts" --passWithNoTests',
+});
+
+project.addTask('security:checkov', {
+  description: 'Run Checkov against synthesized CloudFormation fixtures',
+  exec: 'npm run compile --silent && node scripts/synth-checkov-fixtures.mjs && CHECKOV_VERSION=3.3.1 node scripts/run-checkov.mjs',
 });
 
 project.addTask('security', {
-  description: 'Run CDK security policy validation tests',
-  exec: 'NODE_OPTIONS=--experimental-vm-modules jest --testMatch "<rootDir>/packages/*/test/**/*.security.test.ts" --passWithNoTests',
+  description: 'Run CDK and synthesized CloudFormation security checks',
+  exec: 'npm run security:cdk-nag && npm run security:checkov',
 });
 
 project.addTask('deploy', {
@@ -866,14 +877,17 @@ new TextFile(project, 'lefthook.yml', {
     '  commands:',
     '    format-check:',
     '      run: npm run format:check',
-    '    security:',
-    '      run: npm run security',
+    '    cdk-nag:',
+    '      run: npm run security:cdk-nag',
+    '    checkov:',
+    '      run: npm run security:checkov',
     '',
   ],
 });
 
 project.gitignore.addPatterns(
   '/.npm-cache/',
+  '/.checkov/cfn/',
   '/packages/*/lib/',
   '/.CLAUDE/',
   '/.claude/',
@@ -906,6 +920,8 @@ project.package.setScript('format', 'projen format');
 project.package.setScript('format:check', 'projen format:check');
 project.package.setScript('clean', 'projen clean');
 project.package.setScript('deploy', 'projen deploy');
+project.package.setScript('security:cdk-nag', 'projen security:cdk-nag');
+project.package.setScript('security:checkov', 'projen security:checkov');
 project.package.setScript('security', 'projen security');
 project.package.setScript('hooks:install', 'lefthook install');
 project.package.setScript('hooks:run', 'lefthook run pre-commit');
@@ -952,26 +968,38 @@ project.github?.tryFindWorkflow('build')?.file?.patch(
   JsonPatch.replace('/jobs/build/steps/3/name', 'synth'),
   JsonPatch.replace('/jobs/build/steps/3/run', 'npx projen default'),
   JsonPatch.add('/jobs/build/steps/4', {
+    name: 'Setup Python',
+    uses: 'actions/setup-python@v6',
+    with: {
+      'python-version': '3.13',
+      cache: 'pip',
+    },
+  }),
+  JsonPatch.add('/jobs/build/steps/5', {
+    name: 'Install Checkov',
+    run: `python -m pip install checkov==${checkovVersion}`,
+  }),
+  JsonPatch.add('/jobs/build/steps/6', {
     name: 'format:check',
     run: 'npm run format:check',
   }),
-  JsonPatch.add('/jobs/build/steps/5', {
+  JsonPatch.add('/jobs/build/steps/7', {
     name: 'lint',
     run: 'npm run lint',
   }),
-  JsonPatch.add('/jobs/build/steps/6', {
+  JsonPatch.add('/jobs/build/steps/8', {
     name: 'security',
     run: 'npm run security',
   }),
-  JsonPatch.add('/jobs/build/steps/7', {
+  JsonPatch.add('/jobs/build/steps/9', {
     name: 'test',
     run: 'npm test',
   }),
-  JsonPatch.add('/jobs/build/steps/8', {
+  JsonPatch.add('/jobs/build/steps/10', {
     name: 'compile',
     run: 'npm run compile',
   }),
-  JsonPatch.add('/jobs/build/steps/9', {
+  JsonPatch.add('/jobs/build/steps/11', {
     name: 'package',
     run: 'npm run package',
   }),

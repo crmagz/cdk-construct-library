@@ -5,5 +5,7 @@ pre-commit:
   commands:
     format-check:
       run: npm run format:check
-    security:
-      run: npm run security
+    cdk-nag:
+      run: npm run security:cdk-nag
+    checkov:
+      run: npm run security:checkov

@@ -1,13 +1,16 @@
 # Security Tooling
 
-This repository uses CDK-native security validation during construct development.
+This repository uses CDK-native security validation and synthesized template scanning during construct development.
 
 ## Current Standard
 
 - `cdk-nag` runs AWS Solutions checks against CDK fixture stacks.
-- `npm run security` runs security-focused Jest tests.
+- `Checkov` scans synthesized CloudFormation fixtures for supported construct packages.
+- `npm run security` runs both `cdk-nag` and Checkov checks.
+- `npm run security:cdk-nag` runs only CDK-native security tests.
+- `npm run security:checkov` compiles workspace packages, synthesizes CloudFormation fixtures into `.checkov/cfn`, and runs Checkov.
 - `npm test` and `npm run build` also run `*.security.test.ts` files through normal Jest discovery, so pull requests are validated in CI.
-- Lefthook runs `npm run format:check` and `npm run security` before commits.
+- Lefthook runs `npm run format:check`, `npm run security:cdk-nag`, and `npm run security:checkov` before commits.
 
 Install local hooks after cloning:
 
@@ -26,6 +29,13 @@ To run the hook without committing:
 ```sh
 npm run hooks:run
 ```
+
+For local Checkov runs, install either:
+
+- `checkov==3.3.1`
+- `uvx`, which lets the project run the pinned Checkov version without a global Checkov install
+
+CI installs the pinned Checkov version with Python before running `npm run security`.
 
 ## Why Lefthook
 
@@ -51,6 +61,30 @@ const stack = new Stack(app, 'SecurityStack');
 // Add construct fixtures here.
 
 app.synth();
+```
+
+## Checkov Fixture Pattern
+
+Each construct package that synthesizes AWS resources should add a secure fixture to `scripts/synth-checkov-fixtures.mjs`. The fixture should represent the package's production posture and should be scanned as synthesized CloudFormation, not source TypeScript.
+
+Checkov does not inspect TypeScript construct implementation directly. The fixture script compiles the workspace packages, imports the actual package exports, instantiates representative constructs, synthesizes their CloudFormation templates, and scans those templates.
+
+Use Checkov suppressions only for narrowly scoped scanner limitations or intentional supporting resources. Prefer fixing the fixture or construct defaults first.
+
+For CDK resource-level suppressions, add CloudFormation metadata through the L1 construct:
+
+```ts
+const cfnResource = resource.node.defaultChild;
+cfnResource.cfnOptions.metadata = {
+  checkov: {
+    skip: [
+      {
+        id: 'CKV_AWS_18',
+        comment: 'Explain the exact exception.',
+      },
+    ],
+  },
+};
 ```
 
 ## Terraform And Other IaC

@@ -61,6 +61,7 @@ junit.xml
 !/eslint.config.js
 !/lefthook.yml
 /.npm-cache/
+/.checkov/cfn/
 /packages/*/lib/
 /.CLAUDE/
 /.claude/

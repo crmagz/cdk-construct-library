@@ -22,6 +22,7 @@
 /.projen/tasks.json linguist-generated
 /eslint.config.js linguist-generated
 /ferrflow.json linguist-generated
+/lefthook.yml linguist-generated
 /LICENSE linguist-generated
 /package-lock.json linguist-generated
 /package.json linguist-generated

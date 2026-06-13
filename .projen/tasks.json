@@ -169,6 +169,15 @@
       "name": "pre-compile",
       "description": "Prepare the project for compilation"
     },
+    "security": {
+      "name": "security",
+      "description": "Run CDK security policy validation tests",
+      "steps": [
+        {
+          "exec": "NODE_OPTIONS=--experimental-vm-modules jest --testMatch \"<rootDir>/packages/*/test/**/*.security.test.ts\" --passWithNoTests"
+        }
+      ]
+    },
     "test": {
       "name": "test",
       "description": "Run tests",

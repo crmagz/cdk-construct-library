@@ -25,9 +25,21 @@ jobs:
           node-version: 24.16.0
           package-manager-cache: false
       - name: Install dependencies
-        run: npm install
-      - name: build
-        run: npx projen build
+        run: npm ci
+      - name: synth
+        run: npx projen default
+      - name: format:check
+        run: npm run format:check
+      - name: lint
+        run: npm run lint
+      - name: security
+        run: npm run security
+      - name: test
+        run: npm test
+      - name: compile
+        run: npm run compile
+      - name: package
+        run: npm run package
       - name: Find mutations
         id: self_mutation
         run: |-

@@ -18,6 +18,7 @@
     ".projen/files.json",
     ".projen/tasks.json",
     "ferrflow.json",
+    "lefthook.yml",
     "LICENSE",
     "packages/aurora/tsconfig.json",
     "packages/core/tsconfig.json",

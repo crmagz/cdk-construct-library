@@ -44,6 +44,10 @@ type PrincipalObject = {
   readonly dedupeString?: () => string;
 };
 
+const toDisplayStatementNumber = (statementIndex: number): number => {
+  return statementIndex + 1;
+};
+
 const toArray = (value: string | readonly string[] | undefined): readonly string[] => {
   if (!value) {
     return [];
@@ -247,7 +251,7 @@ const findDuplicateSidFindings = (
 
     findings.push({
       code: IamPolicyValidationFindingCode.DUPLICATE_SID,
-      message: `Policy statement Sid must be unique; first used by statement ${firstStatementIndex}.`,
+      message: `Policy statement Sid must be unique; first used by statement ${toDisplayStatementNumber(firstStatementIndex)}.`,
       statementIndex,
       value: sid,
     });
@@ -281,7 +285,7 @@ export const assertLeastPrivilegePolicyStatements = (
   const messages = findings.map((finding) => {
     const value = finding.value ? ` (${finding.value})` : '';
 
-    return `${finding.code} statement ${finding.statementIndex}${value}: ${finding.message}`;
+    return `${finding.code} statement ${toDisplayStatementNumber(finding.statementIndex)}${value}: ${finding.message}`;
   });
 
   throw new Error(`IAM policy validation failed:\n${messages.join('\n')}`);

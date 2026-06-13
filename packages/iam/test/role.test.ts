@@ -203,6 +203,34 @@ describe('IrsaRole', () => {
     }).toThrow(/https:\/\/ or omit the scheme/);
   });
 
+  it('rejects OIDC provider URLs that normalize to a leading slash', () => {
+    const stack = new Stack();
+
+    expect(() => {
+      new IrsaRole(
+        stack,
+        'LeadingSlashOidcRole',
+        defaultProps({
+          oidcProviderUrl: ' /oidc.eks.us-east-1.amazonaws.com/id/EXAMPLE ',
+        }),
+      );
+    }).toThrow(/must not start with a slash/);
+  });
+
+  it('rejects OIDC provider URLs with whitespace after normalization', () => {
+    const stack = new Stack();
+
+    expect(() => {
+      new IrsaRole(
+        stack,
+        'WhitespaceOidcRole',
+        defaultProps({
+          oidcProviderUrl: 'https:// oidc.eks.us-east-1.amazonaws.com/id/EXAMPLE',
+        }),
+      );
+    }).toThrow(/must not contain whitespace/);
+  });
+
   it('requires an account in the environment config', () => {
     const stack = new Stack();
 

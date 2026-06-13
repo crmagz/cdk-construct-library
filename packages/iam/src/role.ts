@@ -26,6 +26,14 @@ const normalizeOidcProviderUrl = (oidcProviderUrl: string): string => {
     throw new Error('IrsaRole oidcProviderUrl is required.');
   }
 
+  if (normalizedOidcProviderUrl.startsWith('/')) {
+    throw new Error('IrsaRole oidcProviderUrl must not start with a slash.');
+  }
+
+  if (/\s/.test(normalizedOidcProviderUrl)) {
+    throw new Error('IrsaRole oidcProviderUrl must not contain whitespace.');
+  }
+
   return normalizedOidcProviderUrl;
 };
 

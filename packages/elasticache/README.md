@@ -1,7 +1,11 @@
 # @cdk-construct/elasticache
 
-ElastiCache constructs for AWS CDK.
+ElastiCache Redis OSS and Valkey constructs for AWS CDK.
 
-## Status
+## Constructs
 
-This package is scaffolded for Amazon ElastiCache construct development. The implementation will establish the public construct API before the package is added to the release workflow.
+- `ElastiCacheReplicationGroup` creates a replication group with a subnet group,
+  security group, generated AUTH token secret, encryption defaults, and
+  environment-aware sizing.
+
+See [Replication Group](docs/replication-group.md) for usage and defaults.

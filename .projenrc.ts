@@ -346,7 +346,7 @@ new JsonFile(project, 'packages/aurora/package.json', {
       access: 'public',
     },
     scripts: {
-      build: 'tsc -p tsconfig.json',
+      build: `npm run build --workspace ${corePackageName} && tsc -p tsconfig.json`,
       clean: 'rm -rf lib tsconfig.tsbuildinfo',
       package: 'npm pack --pack-destination ../../dist/js',
     },

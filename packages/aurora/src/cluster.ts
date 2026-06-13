@@ -79,6 +79,8 @@ const resolveEngine = (props: AuroraClusterProps): IClusterEngine => {
         version: props.mysqlVersion ?? AuroraMysqlEngineVersion.VER_3_08_0,
       });
   }
+
+  throw new Error(`AuroraCluster unsupported engine: ${props.engine}`);
 };
 
 const resolveInstanceType = (props: AuroraClusterProps): InstanceType => {

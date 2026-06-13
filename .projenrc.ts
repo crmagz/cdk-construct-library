@@ -1100,7 +1100,11 @@ project.tasks
   .tryFind('package')
   ?.exec('npm_config_cache=.npm-cache npm pack --workspaces --pack-destination dist/js');
 
-project.tasks.tryFind('compile')?.reset('npm run build --workspaces --if-present');
+project.tasks
+  .tryFind('compile')
+  ?.reset(
+    `npm run build --workspace ${corePackageName} && npm run build --workspaces --if-present`,
+  );
 project.tasks
   .tryFind('test')
   ?.reset(

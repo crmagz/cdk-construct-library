@@ -44,7 +44,7 @@ export type WafWebAclResources = {
 };
 
 export type WafWebAclResourceProps = {
-  readonly scope: Construct;
+  readonly constructScope: Construct;
   readonly id: string;
   readonly props: WafWebAclProps;
 };

@@ -116,20 +116,21 @@ export const createWebAclRules = (
 };
 
 export const createWebAclResource = (resourceProps: WafWebAclResourceProps): CfnWebACL => {
-  const { scope, id, props } = resourceProps;
+  const { constructScope, id, props } = resourceProps;
   const environment = resolveEnvironmentConfig(props);
   const webAclName = resolveWebAclName(props);
   const metricName = props.metricName ?? webAclName;
+  const wafScope = props.scope ?? DEFAULT_SCOPE;
   const webAclProps: CfnWebACLProps = {
     name: webAclName,
     description: props.description,
-    scope: props.scope ?? DEFAULT_SCOPE,
+    scope: wafScope,
     defaultAction: props.defaultAction ?? { allow: {} },
     rules: createWebAclRules(props, metricName),
     visibilityConfig: createVisibilityConfig(metricName, props),
     ...props.webAclOverrides,
   };
-  const webAcl = new CfnWebACL(scope, id, webAclProps);
+  const webAcl = new CfnWebACL(constructScope, id, webAclProps);
 
   applyTags(webAcl, {
     Environment: environment.name,
@@ -146,7 +147,7 @@ export class WafWebAcl extends Construct {
     super(scope, id);
 
     this.webAcl = createWebAclResource({
-      scope: this,
+      constructScope: this,
       id: 'Resource',
       props,
     });

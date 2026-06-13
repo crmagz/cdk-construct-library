@@ -193,6 +193,21 @@ describe('CloudWatchAlarm', () => {
       DatapointsToAlarm: 1,
     });
   });
+
+  it('rejects explicit datapoints greater than evaluation periods', () => {
+    const stack = new Stack();
+
+    expect(() => {
+      new CloudWatchAlarm(
+        stack,
+        'InvalidDatapointsAlarm',
+        defaultProps({
+          evaluationPeriods: 2,
+          datapointsToAlarm: 3,
+        }),
+      );
+    }).toThrow('datapointsToAlarm (3) must be less than or equal to evaluationPeriods (2).');
+  });
 });
 
 describe('createCloudWatchAlarm', () => {

@@ -52,6 +52,14 @@ const resolveDatapointsToAlarm = (
   return props.datapointsToAlarm ?? Math.min(defaults.datapointsToAlarm, evaluationPeriods);
 };
 
+const validateAlarmPeriods = (evaluationPeriods: number, datapointsToAlarm: number): void => {
+  if (datapointsToAlarm > evaluationPeriods) {
+    throw new Error(
+      `datapointsToAlarm (${datapointsToAlarm}) must be less than or equal to evaluationPeriods (${evaluationPeriods}).`,
+    );
+  }
+};
+
 const addAlarmActions = (alarm: Alarm, props: CloudWatchAlarmProps): void => {
   if (props.alarmActions) {
     alarm.addAlarmAction(...props.alarmActions);
@@ -109,13 +117,17 @@ export class CloudWatchAlarm extends Construct {
 export const createAlarmResource = (resourceProps: CloudWatchAlarmResourceProps): Alarm => {
   const { scope, id, props, defaults } = resourceProps;
   const evaluationPeriods = props.evaluationPeriods ?? defaults.evaluationPeriods;
+  const datapointsToAlarm = resolveDatapointsToAlarm(props, defaults, evaluationPeriods);
+
+  validateAlarmPeriods(evaluationPeriods, datapointsToAlarm);
+
   const alarmProps: AlarmProps = {
     metric: props.metric,
     alarmName: props.alarmName,
     alarmDescription: props.alarmDescription,
     threshold: props.threshold,
     evaluationPeriods,
-    datapointsToAlarm: resolveDatapointsToAlarm(props, defaults, evaluationPeriods),
+    datapointsToAlarm,
     comparisonOperator:
       props.comparisonOperator ?? ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
     treatMissingData: props.treatMissingData ?? defaults.treatMissingData,

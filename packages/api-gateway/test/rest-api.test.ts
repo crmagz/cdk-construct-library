@@ -3,6 +3,7 @@ import { RemovalPolicy, Stack } from 'aws-cdk-lib';
 import { Match, Template } from 'aws-cdk-lib/assertions';
 import {
   EndpointType,
+  IpAddressType,
   MockIntegration,
   RequestValidator,
   RestApi,
@@ -193,6 +194,33 @@ describe('ApiGatewayRestApi', () => {
           ThrottlingRateLimit: 10,
         }),
       ],
+    });
+    template.hasResourceProperties('AWS::ApiGateway::Method', {
+      AuthorizationType: 'AWS_IAM',
+      ApiKeyRequired: true,
+    });
+  });
+
+  it('merges endpoint configuration overrides with the regional default', () => {
+    const stack = new Stack();
+    const api = new ApiGatewayRestApi(stack, 'DualStackApi', {
+      env: devEnv,
+      apiName: 'dual-stack-api',
+      restApiOverrides: {
+        endpointConfiguration: {
+          ipAddressType: IpAddressType.DUAL_STACK,
+        },
+      },
+    });
+    addMockGetMethod(api.api, api.requestValidator);
+
+    const template = synthesizeRestApi(api);
+    template.hasResourceProperties('AWS::ApiGateway::RestApi', {
+      Name: 'dual-stack-api',
+      EndpointConfiguration: {
+        IpAddressType: 'dualstack',
+        Types: ['REGIONAL'],
+      },
     });
   });
 

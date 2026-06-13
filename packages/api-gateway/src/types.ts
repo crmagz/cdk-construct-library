@@ -2,6 +2,7 @@ import type { CdkOverrides, EnvironmentAwareProps } from '@cdk-construct/core';
 import type { RemovalPolicy } from 'aws-cdk-lib';
 import type {
   AccessLogFormat,
+  EndpointConfiguration,
   RequestValidator,
   RestApi,
   RestApiProps,
@@ -9,6 +10,10 @@ import type {
 } from 'aws-cdk-lib/aws-apigateway';
 import type { ILogGroup, LogGroup, LogGroupProps, RetentionDays } from 'aws-cdk-lib/aws-logs';
 import type { Construct } from 'constructs';
+
+export type RestApiOverrides = Omit<CdkOverrides<RestApiProps>, 'endpointConfiguration'> & {
+  readonly endpointConfiguration?: Partial<EndpointConfiguration>;
+};
 
 export type ApiGatewayRestApiProps = EnvironmentAwareProps & {
   readonly apiName: string;
@@ -23,7 +28,7 @@ export type ApiGatewayRestApiProps = EnvironmentAwareProps & {
   readonly logRetention?: RetentionDays;
   readonly logRemovalPolicy?: RemovalPolicy;
   readonly deployOptions?: CdkOverrides<StageOptions>;
-  readonly restApiOverrides?: CdkOverrides<RestApiProps>;
+  readonly restApiOverrides?: RestApiOverrides;
   readonly accessLogGroupOverrides?: CdkOverrides<LogGroupProps>;
 };
 

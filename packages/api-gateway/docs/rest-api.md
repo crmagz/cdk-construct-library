@@ -20,6 +20,7 @@
 
 ```ts
 import { Stack } from 'aws-cdk-lib';
+import { MockIntegration } from 'aws-cdk-lib/aws-apigateway';
 import { EnvironmentName } from '@cdk-construct/core';
 import { ApiGatewayRestApi } from '@cdk-construct/api-gateway';
 
@@ -34,7 +35,15 @@ const api = new ApiGatewayRestApi(stack, 'OrdersApi', {
   },
 });
 
+const integration = new MockIntegration({
+  integrationResponses: [{ statusCode: '200' }],
+  requestTemplates: {
+    'application/json': '{"statusCode": 200}',
+  },
+});
+
 api.api.root.addResource('orders').addMethod('GET', integration, {
+  methodResponses: [{ statusCode: '200' }],
   requestValidator: api.requestValidator,
 });
 ```

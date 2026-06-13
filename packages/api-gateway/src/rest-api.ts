@@ -9,7 +9,11 @@ import {
   RequestValidator,
   RestApi,
 } from 'aws-cdk-lib/aws-apigateway';
-import type { StageOptions } from 'aws-cdk-lib/aws-apigateway';
+import type {
+  EndpointConfiguration,
+  MethodOptions,
+  StageOptions,
+} from 'aws-cdk-lib/aws-apigateway';
 import { LogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs';
 import type { ILogGroup } from 'aws-cdk-lib/aws-logs';
 import { Construct } from 'constructs';
@@ -103,6 +107,20 @@ const createDeployOptions = (
   };
 };
 
+const createDefaultMethodOptions = (props: ApiGatewayRestApiProps): MethodOptions => {
+  return {
+    authorizationType: AuthorizationType.IAM,
+    ...props.restApiOverrides?.defaultMethodOptions,
+  };
+};
+
+const createEndpointConfiguration = (props: ApiGatewayRestApiProps): EndpointConfiguration => {
+  return {
+    types: [EndpointType.REGIONAL],
+    ...props.restApiOverrides?.endpointConfiguration,
+  };
+};
+
 export class ApiGatewayRestApi extends Construct {
   public readonly api: RestApi;
   public readonly accessLogGroup: LogGroup;
@@ -143,14 +161,10 @@ export const createRestApiResource = (resourceProps: RestApiResourceProps): Rest
     restApiName: props.apiName,
     description: props.description,
     cloudWatchRole: true,
-    defaultMethodOptions: {
-      authorizationType: AuthorizationType.IAM,
-    },
-    endpointConfiguration: {
-      types: [EndpointType.REGIONAL],
-    },
     deployOptions: createDeployOptions(props, defaults, accessLogGroup),
     ...props.restApiOverrides,
+    defaultMethodOptions: createDefaultMethodOptions(props),
+    endpointConfiguration: createEndpointConfiguration(props),
   });
 };
 

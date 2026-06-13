@@ -1,6 +1,7 @@
 import { EnvironmentName } from '@cdk-construct/core';
 import { Stack } from 'aws-cdk-lib';
 import { Match, Template } from 'aws-cdk-lib/assertions';
+import type { CfnWebACL } from 'aws-cdk-lib/aws-wafv2';
 
 import { WafWebAcl, WebAclScope, createWafWebAcl } from '../src/index.js';
 
@@ -200,6 +201,50 @@ describe('WafWebAcl', () => {
         }),
       ]),
     });
+  });
+
+  it('normalizes managed-rule visibility config metric names and default flags', () => {
+    const stack = new Stack();
+    const webAcl = new WafWebAcl(stack, 'EdgeAcl', {
+      env: devEnv,
+      name: 'edge',
+      managedRuleGroups: [
+        {
+          name: 'AWSManagedRulesCommonRuleSet',
+          visibilityConfig: {
+            metricName: 'Default_Action',
+          } as unknown as CfnWebACL.VisibilityConfigProperty,
+        },
+      ],
+    });
+
+    const template = synthesizeWebAcl(webAcl);
+    template.hasResourceProperties('AWS::WAFv2::WebACL', {
+      Rules: [
+        Match.objectLike({
+          VisibilityConfig: {
+            CloudWatchMetricsEnabled: true,
+            MetricName: 'Default_Action-metric',
+            SampledRequestsEnabled: true,
+          },
+        }),
+      ],
+    });
+  });
+
+  it('rejects CloudFront scope outside us-east-1', () => {
+    const stack = new Stack();
+
+    expect(() => {
+      new WafWebAcl(stack, 'EdgeAcl', {
+        env: {
+          ...prodEnv,
+          region: 'us-west-2',
+        },
+        name: 'edge',
+        scope: WebAclScope.CLOUDFRONT,
+      });
+    }).toThrow(/CLOUDFRONT scope must be configured in us-east-1/);
   });
 
   it('returns the created web ACL resource from the functional helper', () => {

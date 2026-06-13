@@ -32,10 +32,13 @@ checks each workspace path independently, calculates the next semantic version,
 publishes the package to npm, and creates a service-prefixed GitHub release tag:
 
 ```text
-s3/v0.1.0
-core/v0.1.0
-cloudfront/v0.1.0
-waf/v0.1.0
+core/v<semver>
+aurora/v<semver>
+s3/v<semver>
+sqs/v<semver>
+iam/v<semver>
+cloudfront/v<semver>
+waf/v<semver>
 ```
 
 Use package scopes in commit subjects, for example

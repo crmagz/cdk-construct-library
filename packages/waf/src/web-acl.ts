@@ -14,6 +14,7 @@ import type {
 const DEFAULT_RULE_PRIORITY_INCREMENT = 10;
 const DEFAULT_MANAGED_RULE_VENDOR = 'AWS';
 const DEFAULT_SCOPE = WebAclScope.REGIONAL;
+const CLOUDFRONT_SCOPE_REGION = 'us-east-1';
 
 export const defaultManagedRuleGroups = (): readonly WafManagedRuleGroup[] => {
   return [
@@ -64,6 +65,17 @@ const createVisibilityConfig = (
   };
 };
 
+const createManagedRuleVisibilityConfig = (
+  visibilityConfig: CfnWebACL.VisibilityConfigProperty | undefined,
+  metricName: string,
+): CfnWebACL.VisibilityConfigProperty => {
+  return {
+    cloudWatchMetricsEnabled: visibilityConfig?.cloudWatchMetricsEnabled ?? true,
+    metricName: sanitizeMetricName(visibilityConfig?.metricName ?? metricName),
+    sampledRequestsEnabled: visibilityConfig?.sampledRequestsEnabled ?? true,
+  };
+};
+
 export const createManagedRuleGroupRule = (
   ruleGroup: WafManagedRuleGroup,
   priority: number,
@@ -90,11 +102,10 @@ export const createManagedRuleGroupRule = (
         scopeDownStatement: ruleGroup.scopeDownStatement,
       },
     },
-    visibilityConfig: ruleGroup.visibilityConfig ?? {
-      cloudWatchMetricsEnabled: true,
-      metricName: sanitizeMetricName(ruleGroup.metricName ?? `${defaultMetricName}-${ruleName}`),
-      sampledRequestsEnabled: true,
-    },
+    visibilityConfig: createManagedRuleVisibilityConfig(
+      ruleGroup.visibilityConfig,
+      ruleGroup.metricName ?? `${defaultMetricName}-${ruleName}`,
+    ),
   };
 };
 
@@ -121,6 +132,17 @@ export const createWebAclResource = (resourceProps: WafWebAclResourceProps): Cfn
   const webAclName = resolveWebAclName(props);
   const metricName = props.metricName ?? webAclName;
   const wafScope = props.scope ?? DEFAULT_SCOPE;
+
+  if (
+    wafScope === WebAclScope.CLOUDFRONT &&
+    environment.region !== undefined &&
+    environment.region !== CLOUDFRONT_SCOPE_REGION
+  ) {
+    throw new Error(
+      `WafWebAcl with CLOUDFRONT scope must be configured in ${CLOUDFRONT_SCOPE_REGION}.`,
+    );
+  }
+
   const webAclProps: CfnWebACLProps = {
     name: webAclName,
     description: props.description,

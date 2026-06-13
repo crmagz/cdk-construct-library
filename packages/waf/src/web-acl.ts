@@ -92,7 +92,7 @@ export const createManagedRuleGroupRule = (
     },
     visibilityConfig: ruleGroup.visibilityConfig ?? {
       cloudWatchMetricsEnabled: true,
-      metricName: sanitizeMetricName(`${defaultMetricName}-${ruleName}`),
+      metricName: sanitizeMetricName(ruleGroup.metricName ?? `${defaultMetricName}-${ruleName}`),
       sampledRequestsEnabled: true,
     },
   };

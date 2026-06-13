@@ -94,6 +94,7 @@ describe('WafWebAcl', () => {
         {
           name: 'AWSManagedRulesCommonRuleSet',
           priority: 5,
+          metricName: 'global-edge-common-rules',
           ruleActionOverrides: [
             {
               name: 'SizeRestrictions_BODY',
@@ -113,6 +114,11 @@ describe('WafWebAcl', () => {
       Rules: [
         Match.objectLike({
           Priority: 5,
+          VisibilityConfig: {
+            CloudWatchMetricsEnabled: true,
+            MetricName: 'global-edge-common-rules',
+            SampledRequestsEnabled: true,
+          },
           Statement: {
             ManagedRuleGroupStatement: {
               Name: 'AWSManagedRulesCommonRuleSet',

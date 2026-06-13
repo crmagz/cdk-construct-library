@@ -1,31 +1,16 @@
 # Changelog
 
-All notable changes to `s3` will be documented here.
+All notable changes to `sqs` will be documented here.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
-## [0.4.0] - 2026-06-13
+## [0.1.0] - 2026-06-13
 
 ### Features
 
 - feat(sqs): add queue construct
-
-## [0.3.0] - 2026-06-12
-
-### Features
-
 - feat(core): add environment config helpers
-
-## [0.2.0] - 2026-06-12
-
-### Features
-
 - feat(s3): add bucket construct
-
-## [0.1.0] - 2026-06-12
-
-### Features
-
 - feat(release): replace custom publisher with ferrflow
 - feat(release): infer workspace versions from commits
 - feat(release): add changesets workspace publishing

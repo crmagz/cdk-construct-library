@@ -1,5 +1,5 @@
 import { EnvironmentName } from '@cdk-construct/core';
-import { Stack } from 'aws-cdk-lib';
+import { SecretValue, Stack } from 'aws-cdk-lib';
 import { Match, Template } from 'aws-cdk-lib/assertions';
 import { SecurityGroup, SubnetType, Vpc } from 'aws-cdk-lib/aws-ec2';
 import { CfnReplicationGroup, CfnSubnetGroup } from 'aws-cdk-lib/aws-elasticache';
@@ -154,7 +154,7 @@ describe('ElastiCacheReplicationGroup', () => {
         snapshotWindow: '05:00-06:00',
         preferredMaintenanceWindow: 'sun:07:00-sun:08:00',
         cacheParameterGroupName: 'default.redis7',
-        authToken: 'abcdefghijklmnopqrstuvwxyz123456',
+        authToken: SecretValue.secretsManager('orders/cache/auth-token'),
       }),
     );
 
@@ -172,7 +172,7 @@ describe('ElastiCacheReplicationGroup', () => {
       SnapshotWindow: '05:00-06:00',
       PreferredMaintenanceWindow: 'sun:07:00-sun:08:00',
       CacheParameterGroupName: 'default.redis7',
-      AuthToken: 'abcdefghijklmnopqrstuvwxyz123456',
+      AuthToken: '{{resolve:secretsmanager:orders/cache/auth-token:SecretString:::}}',
     });
   });
 

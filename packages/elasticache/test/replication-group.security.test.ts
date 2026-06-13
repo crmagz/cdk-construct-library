@@ -98,7 +98,6 @@ describe('ElastiCacheReplicationGroup security', () => {
       new ElastiCacheReplicationGroup(stack, 'OrdersCache', {
         env: prodEnv,
         engine: ElastiCacheEngine.REDIS,
-        authToken: 'abcdefghijklmnopqrstuvwxyz123456',
         replicationGroupId: 'insecure-orders-cache-prod',
         vpc,
         replicationGroupOverrides: {

@@ -65,10 +65,6 @@ const resolveAuthToken = (
   props: ElastiCacheReplicationGroupProps,
   authTokenSecret: Secret | undefined,
 ): string | undefined => {
-  if (typeof props.authToken === 'string') {
-    return props.authToken;
-  }
-
   if (SecretValue.isSecretValue(props.authToken)) {
     return props.authToken.unsafeUnwrap();
   }

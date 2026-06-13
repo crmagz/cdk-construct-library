@@ -40,7 +40,7 @@ export type ElastiCacheReplicationGroupProps = EnvironmentAwareProps & {
   readonly preferredMaintenanceWindow?: string;
   readonly cacheParameterGroupName?: string;
   readonly kmsKeyId?: string;
-  readonly authToken?: SecretValue | string;
+  readonly authToken?: SecretValue;
   readonly userGroupIds?: readonly string[];
   readonly logDeliveryConfigurations?: CfnReplicationGroupProps['logDeliveryConfigurations'];
   readonly securityGroup?: ISecurityGroup;

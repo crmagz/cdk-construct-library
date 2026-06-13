@@ -70,7 +70,7 @@
       "description": "Only compile",
       "steps": [
         {
-          "exec": "npm run build --workspace @cdk-construct/core && npm run build --workspaces --if-present"
+          "exec": "npm run build --workspace @cdk-construct/core && npm run build --workspace @cdk-construct/aurora --workspace @cdk-construct/s3 --workspace @cdk-construct/sqs --workspace @cdk-construct/iam --workspace @cdk-construct/cloudwatch --if-present"
         }
       ]
     },

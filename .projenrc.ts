@@ -79,6 +79,10 @@ const workspacePackages = [
     path: 'packages/cloudwatch',
   },
 ];
+const constructPackageBuildArgs = workspacePackages
+  .filter((workspacePackage) => workspacePackage.packageName !== corePackageName)
+  .map((workspacePackage) => `--workspace ${workspacePackage.packageName}`)
+  .join(' ');
 
 const project = new typescript.TypeScriptProject({
   name: '@cdk-construct/library',
@@ -1103,7 +1107,7 @@ project.tasks
 project.tasks
   .tryFind('compile')
   ?.reset(
-    `npm run build --workspace ${corePackageName} && npm run build --workspaces --if-present`,
+    `npm run build --workspace ${corePackageName} && npm run build ${constructPackageBuildArgs} --if-present`,
   );
 project.tasks
   .tryFind('test')

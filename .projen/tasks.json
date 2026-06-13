@@ -29,7 +29,7 @@
       "description": "Remove generated build artifacts",
       "steps": [
         {
-          "exec": "rm -rf lib packages/*/lib dist coverage test-reports .jsii .npm-cache tsconfig.tsbuildinfo packages/*/tsconfig.tsbuildinfo"
+          "exec": "rm -rf lib packages/*/lib dist coverage test-reports .jsii .npm-cache .checkov/cfn tsconfig.tsbuildinfo packages/*/tsconfig.tsbuildinfo"
         }
       ]
     },
@@ -171,10 +171,28 @@
     },
     "security": {
       "name": "security",
+      "description": "Run CDK and synthesized CloudFormation security checks",
+      "steps": [
+        {
+          "exec": "npm run security:cdk-nag && npm run security:checkov"
+        }
+      ]
+    },
+    "security:cdk-nag": {
+      "name": "security:cdk-nag",
       "description": "Run CDK security policy validation tests",
       "steps": [
         {
           "exec": "NODE_OPTIONS=--experimental-vm-modules jest --testMatch \"<rootDir>/packages/*/test/**/*.security.test.ts\" --passWithNoTests"
+        }
+      ]
+    },
+    "security:checkov": {
+      "name": "security:checkov",
+      "description": "Run Checkov against synthesized CloudFormation fixtures",
+      "steps": [
+        {
+          "exec": "npm run compile --silent && node scripts/synth-checkov-fixtures.mjs && CHECKOV_VERSION=3.3.1 node scripts/run-checkov.mjs"
         }
       ]
     },

@@ -90,6 +90,19 @@ const createAccessLogFormat = (props: ApiGatewayRestApiProps): AccessLogFormat =
   );
 };
 
+const sanitizeDeployOptions = (
+  deployOptions: ApiGatewayRestApiProps['deployOptions'],
+): ApiGatewayRestApiProps['deployOptions'] => {
+  if (!deployOptions) {
+    return undefined;
+  }
+
+  const safeDeployOptions = { ...deployOptions };
+  delete safeDeployOptions.stageName;
+
+  return safeDeployOptions;
+};
+
 const createDeployOptions = (
   props: ApiGatewayRestApiProps,
   defaults: ApiGatewayRestApiDefaults,
@@ -105,7 +118,7 @@ const createDeployOptions = (
     dataTraceEnabled: false,
     throttlingBurstLimit: props.throttlingBurstLimit ?? defaults.throttlingBurstLimit,
     throttlingRateLimit: props.throttlingRateLimit ?? defaults.throttlingRateLimit,
-    ...props.deployOptions,
+    ...sanitizeDeployOptions(props.deployOptions),
   };
 };
 

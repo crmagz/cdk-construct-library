@@ -225,6 +225,29 @@ describe('ApiGatewayRestApi', () => {
     });
   });
 
+  it('ignores deployOptions stageName in favor of the dedicated stageName prop', () => {
+    const stack = new Stack();
+    const api = new ApiGatewayRestApi(stack, 'StageApi', {
+      env: devEnv,
+      apiName: 'stage-api',
+      stageName: 'sandbox',
+      deployOptions: {
+        stageName: 'unsafe-deploy-stage',
+        tracingEnabled: false,
+      },
+    });
+    addMockGetMethod(api.api, api.requestValidator);
+
+    const template = synthesizeRestApi(api);
+    template.hasResourceProperties('AWS::Logs::LogGroup', {
+      LogGroupName: '/aws/apigateway/stage-api/sandbox',
+    });
+    template.hasResourceProperties('AWS::ApiGateway::Stage', {
+      StageName: 'sandbox',
+      TracingEnabled: false,
+    });
+  });
+
   it('ignores construct-owned restApiOverrides keys from unsafe callers', () => {
     const stack = new Stack();
     const unsafeRestApiOverrides = {

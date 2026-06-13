@@ -20,9 +20,22 @@ const createSecurityApp = (): App => {
 };
 
 const acknowledgeNagFinding = (construct: IConstruct, id: string, reason: string): void => {
-  construct.node.addMetadata(Validations.ACKNOWLEDGED_RULES_METADATA_KEY, {
-    [`annotation::${id}`]: reason,
-  });
+  try {
+    Validations.of(construct).acknowledge({
+      id,
+      reason,
+    });
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('Invalid validation rule ID')) {
+      // cdk-nag granular IDs contain reserved "::" delimiters that CDK 2.258 rejects.
+      construct.node.addMetadata(Validations.ACKNOWLEDGED_RULES_METADATA_KEY, {
+        [`annotation::${id}`]: reason,
+      });
+      return;
+    }
+
+    throw error;
+  }
 };
 
 describe('ApiGatewayRestApi security', () => {
@@ -47,8 +60,7 @@ describe('ApiGatewayRestApi security', () => {
         requestValidator: api.requestValidator,
       },
     );
-    const cloudWatchRole = api.api.node.findChild('CloudWatchRole');
-    const cloudWatchRoleResource = cloudWatchRole.node.defaultChild;
+    const cloudWatchRoleResource = api.api.node.tryFindChild('CloudWatchRole')?.node.defaultChild;
     const methodResource = method.node.defaultChild;
     const stageResource = api.api.deploymentStage.node.defaultChild;
 

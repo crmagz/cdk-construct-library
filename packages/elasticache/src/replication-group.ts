@@ -72,6 +72,10 @@ const resolveAuthToken = (
   return authTokenSecret?.secretValue.unsafeUnwrap();
 };
 
+const hasAuthTokenOverride = (props: ElastiCacheReplicationGroupProps): boolean => {
+  return Object.prototype.hasOwnProperty.call(props.replicationGroupOverrides ?? {}, 'authToken');
+};
+
 const createSecurityGroupProps = (props: ElastiCacheReplicationGroupProps): SecurityGroupProps => {
   return {
     vpc: props.vpc,
@@ -139,7 +143,10 @@ const createReplicationGroupProps = (
     autoMinorVersionUpgrade: true,
     cacheParameterGroupName: props.cacheParameterGroupName,
     kmsKeyId: props.kmsKeyId,
-    userGroupIds: props.userGroupIds ? [...props.userGroupIds] : undefined,
+    userGroupIds:
+      props.userGroupIds !== undefined && props.userGroupIds.length > 0
+        ? [...props.userGroupIds]
+        : undefined,
     logDeliveryConfigurations: props.logDeliveryConfigurations,
     ...props.replicationGroupOverrides,
   };
@@ -206,7 +213,7 @@ export const createAuthTokenSecretResource = (
 ): Secret | undefined => {
   const { scope, id, props } = resourceProps;
 
-  if (props.authToken !== undefined) {
+  if (props.authToken !== undefined || hasAuthTokenOverride(props)) {
     return undefined;
   }
 

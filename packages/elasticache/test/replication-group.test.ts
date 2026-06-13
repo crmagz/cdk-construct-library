@@ -176,6 +176,44 @@ describe('ElastiCacheReplicationGroup', () => {
     });
   });
 
+  it('does not create an auth token secret when authToken is provided through overrides', () => {
+    const stack = new Stack();
+
+    new ElastiCacheReplicationGroup(
+      stack,
+      'OrdersCache',
+      defaultProps(stack, {
+        replicationGroupId: 'orders-cache-no-auth',
+        replicationGroupOverrides: {
+          authToken: '',
+        },
+      }),
+    );
+
+    const template = Template.fromStack(stack);
+    template.resourceCountIs('AWS::SecretsManager::Secret', 0);
+    template.hasResourceProperties('AWS::ElastiCache::ReplicationGroup', {
+      AuthToken: '',
+    });
+  });
+
+  it('omits user group ids when the configured list is empty', () => {
+    const stack = new Stack();
+
+    new ElastiCacheReplicationGroup(
+      stack,
+      'OrdersCache',
+      defaultProps(stack, {
+        replicationGroupId: 'orders-cache-empty-user-groups',
+        userGroupIds: [],
+      }),
+    );
+
+    Template.fromStack(stack).hasResourceProperties('AWS::ElastiCache::ReplicationGroup', {
+      UserGroupIds: Match.absent(),
+    });
+  });
+
   it('allows subnet group, security group, and replication group overrides', () => {
     const stack = new Stack();
     const vpc = createVpc(stack);

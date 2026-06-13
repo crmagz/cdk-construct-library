@@ -278,6 +278,76 @@ describe('ElastiCacheReplicationGroup', () => {
       ]),
     });
   });
+
+  it('uses replication group override port for client security group ingress', () => {
+    const stack = new Stack();
+    const vpc = createVpc(stack);
+    const clientSecurityGroup = new SecurityGroup(stack, 'ClientSecurityGroup', { vpc });
+
+    new ElastiCacheReplicationGroup(stack, 'OrdersCache', {
+      ...defaultProps(stack, {
+        vpc,
+        replicationGroupId: 'orders-cache-override-port-clients',
+        port: 6380,
+      }),
+      allowedClientSecurityGroups: [clientSecurityGroup],
+      replicationGroupOverrides: {
+        port: 6382,
+      },
+    });
+
+    const template = Template.fromStack(stack);
+    template.hasResourceProperties('AWS::ElastiCache::ReplicationGroup', {
+      Port: 6382,
+    });
+    template.hasResourceProperties('AWS::EC2::SecurityGroup', {
+      SecurityGroupIngress: Match.arrayWith([
+        Match.objectLike({
+          IpProtocol: 'tcp',
+          FromPort: 6382,
+          ToPort: 6382,
+          SourceSecurityGroupId: {
+            'Fn::GetAtt': [Match.stringLikeRegexp('ClientSecurityGroup'), 'GroupId'],
+          },
+        }),
+      ]),
+    });
+  });
+
+  it('rejects automatic failover when only one cache cluster is configured', () => {
+    const stack = new Stack();
+
+    expect(() => {
+      new ElastiCacheReplicationGroup(
+        stack,
+        'OrdersCache',
+        defaultProps(stack, {
+          automaticFailoverEnabled: true,
+          numCacheClusters: 1,
+          replicationGroupId: 'orders-cache-invalid-failover',
+        }),
+      );
+    }).toThrow(
+      'ElastiCacheReplicationGroup automaticFailoverEnabled requires at least two cache clusters.',
+    );
+  });
+
+  it('rejects Multi-AZ when automatic failover is disabled', () => {
+    const stack = new Stack();
+
+    expect(() => {
+      new ElastiCacheReplicationGroup(
+        stack,
+        'OrdersCache',
+        defaultProps(stack, {
+          automaticFailoverEnabled: false,
+          multiAzEnabled: true,
+          numCacheClusters: 2,
+          replicationGroupId: 'orders-cache-invalid-multi-az',
+        }),
+      );
+    }).toThrow('ElastiCacheReplicationGroup multiAzEnabled requires automaticFailoverEnabled.');
+  });
 });
 
 describe('createElastiCacheReplicationGroup', () => {

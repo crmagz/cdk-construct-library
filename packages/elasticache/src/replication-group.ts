@@ -76,6 +76,53 @@ const hasAuthTokenOverride = (props: ElastiCacheReplicationGroupProps): boolean 
   return Object.prototype.hasOwnProperty.call(props.replicationGroupOverrides ?? {}, 'authToken');
 };
 
+const resolveEffectivePort = (props: ElastiCacheReplicationGroupProps): number => {
+  return props.replicationGroupOverrides?.port ?? props.port ?? DEFAULT_PORT;
+};
+
+const resolveReplicationGroupTopology = (
+  props: ElastiCacheReplicationGroupProps,
+  defaults: ElastiCacheReplicationGroupDefaults,
+): {
+  readonly numCacheClusters: number;
+  readonly automaticFailoverEnabled: boolean;
+  readonly multiAzEnabled: boolean;
+} => {
+  const numCacheClusters = props.numCacheClusters ?? defaults.numCacheClusters;
+  const automaticFailoverEnabled = props.automaticFailoverEnabled ?? numCacheClusters > 1;
+  const multiAzEnabled = props.multiAzEnabled ?? automaticFailoverEnabled;
+
+  return {
+    numCacheClusters,
+    automaticFailoverEnabled,
+    multiAzEnabled,
+  };
+};
+
+const validateReplicationGroupTopology = (
+  props: ElastiCacheReplicationGroupProps,
+  defaults: ElastiCacheReplicationGroupDefaults,
+): void => {
+  const { numCacheClusters, automaticFailoverEnabled, multiAzEnabled } =
+    resolveReplicationGroupTopology(props, defaults);
+
+  if (numCacheClusters < 1) {
+    throw new Error('ElastiCacheReplicationGroup requires at least one cache cluster.');
+  }
+
+  if (automaticFailoverEnabled && numCacheClusters < 2) {
+    throw new Error(
+      'ElastiCacheReplicationGroup automaticFailoverEnabled requires at least two cache clusters.',
+    );
+  }
+
+  if (multiAzEnabled && !automaticFailoverEnabled) {
+    throw new Error(
+      'ElastiCacheReplicationGroup multiAzEnabled requires automaticFailoverEnabled.',
+    );
+  }
+};
+
 const createSecurityGroupProps = (props: ElastiCacheReplicationGroupProps): SecurityGroupProps => {
   return {
     vpc: props.vpc,
@@ -92,10 +139,12 @@ const grantClientAccess = (
   securityGroup: ISecurityGroup,
   props: ElastiCacheReplicationGroupProps,
 ): void => {
+  const port = resolveEffectivePort(props);
+
   props.allowedClientSecurityGroups?.forEach((clientSecurityGroup) => {
     securityGroup.addIngressRule(
       Peer.securityGroupId(clientSecurityGroup.securityGroupId),
-      Port.tcp(props.port ?? DEFAULT_PORT),
+      Port.tcp(port),
       `Allow ${clientSecurityGroup.securityGroupId} to connect to ElastiCache`,
     );
   });
@@ -113,9 +162,9 @@ const createReplicationGroupProps = (
 ): CfnReplicationGroupProps => {
   const { props, defaults, subnetGroup, securityGroup, authTokenSecret } = resourceProps;
   const environment = resolveEnvironmentConfig(props);
-  const numCacheClusters = props.numCacheClusters ?? defaults.numCacheClusters;
-  const automaticFailoverEnabled = props.automaticFailoverEnabled ?? numCacheClusters > 1;
-  const multiAzEnabled = props.multiAzEnabled ?? automaticFailoverEnabled;
+  const port = resolveEffectivePort(props);
+  const { numCacheClusters, automaticFailoverEnabled, multiAzEnabled } =
+    resolveReplicationGroupTopology(props, defaults);
 
   return {
     replicationGroupId: props.replicationGroupId,
@@ -129,7 +178,7 @@ const createReplicationGroupProps = (
     securityGroupIds: resolveSecurityGroups(props, securityGroup).map(
       (group) => group.securityGroupId,
     ),
-    port: props.port ?? DEFAULT_PORT,
+    port,
     numCacheClusters,
     automaticFailoverEnabled,
     multiAzEnabled,
@@ -243,6 +292,8 @@ export const createElastiCacheReplicationGroupResources = (
   resourceProps: CreateElastiCacheReplicationGroupResourceProps,
 ): ElastiCacheReplicationGroupResources => {
   const defaults = defaultsForEnvironment(resourceProps.props);
+  validateReplicationGroupTopology(resourceProps.props, defaults);
+
   const subnetGroup = createSubnetGroupResource(resourceProps);
   const securityGroup = createSecurityGroupResource(resourceProps);
   const authTokenSecret = createAuthTokenSecretResource(resourceProps);

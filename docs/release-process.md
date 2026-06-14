@@ -8,6 +8,7 @@ Use the package name as the conventional commit scope:
 
 ```text
 feat(s3): add bucket construct
+feat(opensearch): add domain construct
 fix(core): preserve construct metadata
 perf(aurora): reduce generated policy size
 ```
@@ -39,6 +40,7 @@ Package releases use service-prefixed semver tags:
 core/v0.1.0
 aurora/v0.1.0
 s3/v0.1.0
+opensearch/v0.1.0
 ```
 
 ## Publish

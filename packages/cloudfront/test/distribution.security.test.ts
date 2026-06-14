@@ -44,13 +44,7 @@ const createLogBucket = (stack: Stack): Bucket => {
     objectOwnership: ObjectOwnership.OBJECT_WRITER,
   });
 
-  const bucketResource = bucket.node.defaultChild;
-
-  if (!bucketResource) {
-    throw new Error('CloudFront access log bucket resource was not created.');
-  }
-
-  Validations.of(bucketResource).acknowledge({
+  Validations.of(bucket.node.findChild('Resource')).acknowledge({
     id: 'AwsSolutions-S1',
     reason:
       'This bucket receives CloudFront access logs; logging this bucket would create recursive log delivery.',

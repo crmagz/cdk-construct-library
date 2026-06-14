@@ -43,9 +43,14 @@ test('ferrflow release config covers every workspace package', async () => {
       },
     ]);
     assert.equal(workspacePackage.name, `@cdk-construct/${service}`);
+    const packageBuild =
+      service === 'core'
+        ? `npm run build --workspace @cdk-construct/${service}`
+        : `npm run build --workspace @cdk-construct/core && npm run build --workspace @cdk-construct/${service}`;
+
     assert.equal(
       config.hooks.postPublish,
-      `npm run build --workspace @cdk-construct/${service} && npm publish --workspace @cdk-construct/${service} --access public`,
+      `${packageBuild} && npm publish --workspace @cdk-construct/${service} --access public`,
     );
   }
 });

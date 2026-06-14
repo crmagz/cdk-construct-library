@@ -90,6 +90,7 @@ describe('WafWebAcl', () => {
       scope: WebAclScope.CLOUDFRONT,
       tags: {
         Application: 'edge',
+        Environment: 'staging',
       },
       managedRuleGroups: [
         {
@@ -140,6 +141,10 @@ describe('WafWebAcl', () => {
         {
           Key: 'Application',
           Value: 'edge',
+        },
+        {
+          Key: 'Environment',
+          Value: 'prod',
         },
       ]),
     });
@@ -244,7 +249,7 @@ describe('WafWebAcl', () => {
         name: 'edge',
         scope: WebAclScope.CLOUDFRONT,
       });
-    }).toThrow(/CLOUDFRONT scope must be configured in us-east-1/);
+    }).toThrow(/CLOUDFRONT scope must be configured in us-east-1; received us-west-2/);
   });
 
   it('returns the created web ACL resource from the functional helper', () => {

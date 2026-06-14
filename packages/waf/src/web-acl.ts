@@ -139,7 +139,7 @@ export const createWebAclResource = (resourceProps: WafWebAclResourceProps): Cfn
     environment.region !== CLOUDFRONT_SCOPE_REGION
   ) {
     throw new Error(
-      `WafWebAcl with CLOUDFRONT scope must be configured in ${CLOUDFRONT_SCOPE_REGION}.`,
+      `WafWebAcl with CLOUDFRONT scope must be configured in ${CLOUDFRONT_SCOPE_REGION}; received ${environment.region}.`,
     );
   }
 
@@ -155,8 +155,8 @@ export const createWebAclResource = (resourceProps: WafWebAclResourceProps): Cfn
   const webAcl = new CfnWebACL(constructScope, id, webAclProps);
 
   applyTags(webAcl, {
-    Environment: environment.name,
     ...props.tags,
+    Environment: environment.name,
   });
 
   return webAcl;

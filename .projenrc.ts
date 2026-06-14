@@ -47,6 +47,15 @@ const packageVersion = (packageJsonPath: string, fallback = '0.0.0'): string => 
   }
 };
 
+const releasePostPublishCommand = (packageName: string): string => {
+  const buildCommand =
+    packageName === corePackageName
+      ? `npm run build --workspace ${packageName}`
+      : `npm run build --workspace ${corePackageName} && npm run build --workspace ${packageName}`;
+
+  return `${buildCommand} && npm publish --workspace ${packageName} --access public`;
+};
+
 const workspacePackages = [
   {
     service: 'core',
@@ -788,7 +797,7 @@ new JsonFile(project, 'ferrflow.json', {
         },
       ],
       hooks: {
-        postPublish: `npm run build --workspace ${workspacePackage.packageName} && npm publish --workspace ${workspacePackage.packageName} --access public`,
+        postPublish: releasePostPublishCommand(workspacePackage.packageName),
       },
     })),
   },

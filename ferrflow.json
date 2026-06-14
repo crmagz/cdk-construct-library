@@ -37,7 +37,7 @@
         }
       ],
       "hooks": {
-        "postPublish": "npm run build --workspace @cdk-construct/aurora && npm publish --workspace @cdk-construct/aurora --access public"
+        "postPublish": "npm run build --workspace @cdk-construct/core && npm run build --workspace @cdk-construct/aurora && npm publish --workspace @cdk-construct/aurora --access public"
       }
     },
     {
@@ -51,7 +51,7 @@
         }
       ],
       "hooks": {
-        "postPublish": "npm run build --workspace @cdk-construct/s3 && npm publish --workspace @cdk-construct/s3 --access public"
+        "postPublish": "npm run build --workspace @cdk-construct/core && npm run build --workspace @cdk-construct/s3 && npm publish --workspace @cdk-construct/s3 --access public"
       }
     },
     {
@@ -65,7 +65,7 @@
         }
       ],
       "hooks": {
-        "postPublish": "npm run build --workspace @cdk-construct/sqs && npm publish --workspace @cdk-construct/sqs --access public"
+        "postPublish": "npm run build --workspace @cdk-construct/core && npm run build --workspace @cdk-construct/sqs && npm publish --workspace @cdk-construct/sqs --access public"
       }
     },
     {
@@ -79,7 +79,7 @@
         }
       ],
       "hooks": {
-        "postPublish": "npm run build --workspace @cdk-construct/iam && npm publish --workspace @cdk-construct/iam --access public"
+        "postPublish": "npm run build --workspace @cdk-construct/core && npm run build --workspace @cdk-construct/iam && npm publish --workspace @cdk-construct/iam --access public"
       }
     },
     {
@@ -93,7 +93,7 @@
         }
       ],
       "hooks": {
-        "postPublish": "npm run build --workspace @cdk-construct/cloudfront && npm publish --workspace @cdk-construct/cloudfront --access public"
+        "postPublish": "npm run build --workspace @cdk-construct/core && npm run build --workspace @cdk-construct/cloudfront && npm publish --workspace @cdk-construct/cloudfront --access public"
       }
     }
   ],

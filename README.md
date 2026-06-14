@@ -32,9 +32,12 @@ checks each workspace path independently, calculates the next semantic version,
 publishes the package to npm, and creates a service-prefixed GitHub release tag:
 
 ```text
-s3/v0.1.0
-api-gateway/v0.1.0
 core/v0.1.0
+aurora/v0.1.0
+api-gateway/v0.1.0
+s3/v0.1.0
+sqs/v0.1.0
+iam/v0.1.0
 cloudfront/v0.1.0
 ```
 

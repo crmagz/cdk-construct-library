@@ -74,18 +74,28 @@ const addAlarmActions = (alarm: Alarm, props: CloudWatchAlarmProps): void => {
   }
 };
 
+const resolveAlarmName = (props: CloudWatchAlarmProps): string | undefined => {
+  if (props.alarmOverrides && Object.hasOwn(props.alarmOverrides, 'alarmName')) {
+    return props.alarmOverrides.alarmName;
+  }
+
+  return props.alarmName;
+};
+
 const createDefaultDashboardWidgets = (
   props: CloudWatchAlarmProps,
   alarm: Alarm,
 ): readonly IWidget[] => {
+  const alarmName = resolveAlarmName(props) ?? 'Alarm';
+
   return [
     new AlarmWidget({
-      title: props.alarmName ?? 'Alarm',
+      title: alarmName,
       alarm,
       ...props.alarmWidgetOverrides,
     }),
     new GraphWidget({
-      title: `${props.alarmName ?? 'Alarm'} metric`,
+      title: `${alarmName} metric`,
       left: [props.metric],
       ...props.graphWidgetOverrides,
     }),
@@ -93,7 +103,9 @@ const createDefaultDashboardWidgets = (
 };
 
 const resolveDashboardName = (props: CloudWatchAlarmProps): string | undefined => {
-  return props.dashboardName ?? (props.alarmName ? `${props.alarmName}-dashboard` : undefined);
+  const alarmName = resolveAlarmName(props);
+
+  return props.dashboardName ?? (alarmName ? `${alarmName}-dashboard` : undefined);
 };
 
 export class CloudWatchAlarm extends Construct {
@@ -190,9 +202,16 @@ export const createCloudWatchAlarm = (
   props: CloudWatchAlarmProps,
 ): CloudWatchAlarmResources => {
   const cloudWatchAlarm = new CloudWatchAlarm(scope, id, props);
-
-  return {
+  const resources: CloudWatchAlarmResources = {
     alarm: cloudWatchAlarm.alarm,
-    dashboard: cloudWatchAlarm.dashboard,
   };
+
+  if (cloudWatchAlarm.dashboard) {
+    return {
+      ...resources,
+      dashboard: cloudWatchAlarm.dashboard,
+    };
+  }
+
+  return resources;
 };

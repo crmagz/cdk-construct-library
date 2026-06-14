@@ -63,6 +63,24 @@ const synthesizeAlarm = (alarm: CloudWatchAlarm): Template => {
   return Template.fromStack(Stack.of(alarm));
 };
 
+const getDashboardBody = (template: Template): string => {
+  const dashboards = Object.values(template.findResources('AWS::CloudWatch::Dashboard'));
+  const dashboard = dashboards[0] as
+    | {
+        readonly Properties?: {
+          readonly DashboardBody?: unknown;
+        };
+      }
+    | undefined;
+  const dashboardBody = dashboard?.Properties?.DashboardBody;
+
+  if (!dashboardBody) {
+    throw new Error('Expected a dashboard body.');
+  }
+
+  return JSON.stringify(dashboardBody);
+};
+
 describe('CloudWatchAlarm', () => {
   it('creates a production alarm with active defaults and a dashboard', () => {
     const stack = new Stack();
@@ -177,6 +195,31 @@ describe('CloudWatchAlarm', () => {
     });
   });
 
+  it('uses the alarm override name for default dashboard and widget names', () => {
+    const stack = new Stack();
+    const alarm = new CloudWatchAlarm(
+      stack,
+      'AlarmNameOverrideAlarm',
+      defaultProps({
+        alarmName: 'orders-queue-depth-prod',
+        alarmOverrides: {
+          alarmName: 'orders-queue-depth-critical-prod',
+        },
+      }),
+    );
+
+    const template = synthesizeAlarm(alarm);
+    template.hasResourceProperties('AWS::CloudWatch::Alarm', {
+      AlarmName: 'orders-queue-depth-critical-prod',
+    });
+    template.hasResourceProperties('AWS::CloudWatch::Dashboard', {
+      DashboardName: 'orders-queue-depth-critical-prod-dashboard',
+    });
+    const dashboardBody = getDashboardBody(template);
+    expect(dashboardBody).toContain('orders-queue-depth-critical-prod');
+    expect(dashboardBody).toContain('orders-queue-depth-critical-prod metric');
+  });
+
   it('caps default datapoints when evaluation periods are lowered', () => {
     const stack = new Stack();
     const alarm = new CloudWatchAlarm(
@@ -217,6 +260,21 @@ describe('createCloudWatchAlarm', () => {
 
     expect(resources.alarm).toBeInstanceOf(Alarm);
     expect(resources.dashboard).toBeInstanceOf(Dashboard);
+  });
+
+  it('omits the dashboard property when no dashboard is created', () => {
+    const stack = new Stack();
+    const resources = createCloudWatchAlarm(
+      stack,
+      'OrdersDevAlarm',
+      defaultProps({
+        env: devEnv,
+        alarmName: 'orders-queue-depth-dev',
+      }),
+    );
+
+    expect(resources.alarm).toBeInstanceOf(Alarm);
+    expect(Object.hasOwn(resources, 'dashboard')).toBe(false);
   });
 });
 

@@ -51,7 +51,7 @@
         }
       ],
       "hooks": {
-        "postPublish": "npm run build --workspace @cdk-construct/api-gateway && npm publish --workspace @cdk-construct/api-gateway --access public"
+        "postPublish": "npm run build --workspace @cdk-construct/core && npm run build --workspace @cdk-construct/api-gateway && npm publish --workspace @cdk-construct/api-gateway --access public"
       }
     },
     {

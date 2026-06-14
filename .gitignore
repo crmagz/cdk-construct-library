@@ -56,6 +56,8 @@ junit.xml
 !/packages/iam/tsconfig.json
 !/packages/cloudfront/package.json
 !/packages/cloudfront/tsconfig.json
+!/packages/waf/package.json
+!/packages/waf/tsconfig.json
 !/ferrflow.json
 !/.github/release.yml
 !/.github/workflows/release.yml

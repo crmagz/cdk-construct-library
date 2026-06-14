@@ -7,6 +7,7 @@ const auroraPackageName = '@cdk-construct/aurora';
 const s3PackageName = '@cdk-construct/s3';
 const sqsPackageName = '@cdk-construct/sqs';
 const iamPackageName = '@cdk-construct/iam';
+const cloudwatchPackageName = '@cdk-construct/cloudwatch';
 const repositoryUrl = 'git+https://github.com/crmagz/cdk-construct-library.git';
 const nodeVersion = '24.16.0';
 const npmVersion = '11.16.0';
@@ -72,7 +73,16 @@ const workspacePackages = [
     packageName: iamPackageName,
     path: 'packages/iam',
   },
+  {
+    service: 'cloudwatch',
+    packageName: cloudwatchPackageName,
+    path: 'packages/cloudwatch',
+  },
 ];
+const constructPackageBuildArgs = workspacePackages
+  .filter((workspacePackage) => workspacePackage.packageName !== corePackageName)
+  .map((workspacePackage) => `--workspace ${workspacePackage.packageName}`)
+  .join(' ');
 
 const project = new typescript.TypeScriptProject({
   name: '@cdk-construct/library',
@@ -665,6 +675,108 @@ new JsonFile(project, 'packages/iam/tsconfig.json', {
   },
 });
 
+new JsonFile(project, 'packages/cloudwatch/package.json', {
+  readonly: false,
+  obj: {
+    name: cloudwatchPackageName,
+    version: packageVersion('packages/cloudwatch/package.json'),
+    description: 'CloudWatch constructs for AWS CDK',
+    repository: {
+      type: 'git',
+      url: repositoryUrl,
+      directory: 'packages/cloudwatch',
+    },
+    author: {
+      name: 'crmagz',
+      email: '33166233+crmagz@users.noreply.github.com',
+    },
+    license: 'Apache-2.0',
+    type: 'module',
+    main: 'lib/index.js',
+    types: 'lib/index.d.ts',
+    exports: {
+      '.': {
+        types: './lib/index.d.ts',
+        import: './lib/index.js',
+      },
+    },
+    files: ['lib', 'README.md', 'docs'],
+    sideEffects: false,
+    publishConfig: {
+      access: 'public',
+    },
+    scripts: {
+      build: 'tsc -p tsconfig.json',
+      clean: 'rm -rf lib tsconfig.tsbuildinfo',
+      package: 'npm pack --pack-destination ../../dist/js',
+    },
+    dependencies: {
+      [corePackageName]: `^${packageVersion('packages/core/package.json')}`,
+    },
+    peerDependencies: {
+      'aws-cdk-lib': awsCdkLibPeerVersion,
+      constructs: constructsPeerVersion,
+    },
+    devDependencies: {
+      'aws-cdk-lib': awsCdkLibVersion,
+      constructs: constructsVersion,
+    },
+    keywords: [
+      'aws-cdk',
+      'cdk',
+      'constructs',
+      'cloudwatch',
+      'observability',
+      'alarms',
+      'dashboard',
+      'typescript',
+      'esm',
+    ],
+    engines: {
+      node: '>= 20.0.0',
+    },
+    packageManager: `npm@${npmVersion}`,
+  },
+});
+
+new JsonFile(project, 'packages/cloudwatch/tsconfig.json', {
+  obj: {
+    compilerOptions: {
+      rootDir: 'src',
+      outDir: 'lib',
+      alwaysStrict: true,
+      declaration: true,
+      declarationMap: true,
+      esModuleInterop: true,
+      experimentalDecorators: true,
+      forceConsistentCasingInFileNames: true,
+      inlineSourceMap: true,
+      inlineSources: true,
+      lib: ['ES2022'],
+      module: 'NodeNext',
+      moduleResolution: 'NodeNext',
+      noEmitOnError: false,
+      noFallthroughCasesInSwitch: true,
+      noImplicitAny: true,
+      noImplicitReturns: true,
+      noImplicitThis: true,
+      noUnusedLocals: true,
+      noUnusedParameters: true,
+      resolveJsonModule: true,
+      skipLibCheck: true,
+      strict: true,
+      strictNullChecks: true,
+      strictPropertyInitialization: true,
+      stripInternal: true,
+      target: 'ES2022',
+      types: ['node'],
+      verbatimModuleSyntax: true,
+    },
+    include: ['src/**/*.ts'],
+    exclude: ['lib', 'node_modules'],
+  },
+});
+
 new JsonFile(project, 'ferrflow.json', {
   obj: {
     $schema: 'https://ferrflow.com/schema/ferrflow.json',
@@ -992,7 +1104,11 @@ project.tasks
   .tryFind('package')
   ?.exec('npm_config_cache=.npm-cache npm pack --workspaces --pack-destination dist/js');
 
-project.tasks.tryFind('compile')?.reset('npm run build --workspaces --if-present');
+project.tasks
+  .tryFind('compile')
+  ?.reset(
+    `npm run build --workspace ${corePackageName} && npm run build ${constructPackageBuildArgs} --if-present`,
+  );
 project.tasks
   .tryFind('test')
   ?.reset(

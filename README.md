@@ -9,11 +9,14 @@ Prettier, and ESM package metadata.
 
 ## Packages
 
-| Package                 | Purpose                                         |
-| ----------------------- | ----------------------------------------------- |
-| `@cdk-construct/core`   | Shared foundation for future service constructs |
-| `@cdk-construct/aurora` | Aurora PostgreSQL and MySQL constructs          |
-| `@cdk-construct/s3`     | S3 bucket constructs                            |
+| Package                     | Purpose                                         |
+| --------------------------- | ----------------------------------------------- |
+| `@cdk-construct/core`       | Shared foundation for future service constructs |
+| `@cdk-construct/aurora`     | Aurora PostgreSQL and MySQL constructs          |
+| `@cdk-construct/s3`         | S3 bucket constructs                            |
+| `@cdk-construct/sqs`        | SQS queue constructs                            |
+| `@cdk-construct/iam`        | IAM role constructs                             |
+| `@cdk-construct/cloudwatch` | CloudWatch observability constructs             |
 
 ## Install
 

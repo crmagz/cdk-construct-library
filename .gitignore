@@ -54,6 +54,8 @@ junit.xml
 !/packages/sqs/tsconfig.json
 !/packages/iam/package.json
 !/packages/iam/tsconfig.json
+!/packages/cloudwatch/package.json
+!/packages/cloudwatch/tsconfig.json
 !/ferrflow.json
 !/.github/release.yml
 !/.github/workflows/release.yml

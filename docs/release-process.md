@@ -36,9 +36,7 @@ Other commit types do not publish a package by themselves.
 Package releases use service-prefixed semver tags:
 
 ```text
-core/v0.1.0
-aurora/v0.1.0
-s3/v0.1.0
+<service>/v<semver>
 ```
 
 ## Publish

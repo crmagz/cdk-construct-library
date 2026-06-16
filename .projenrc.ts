@@ -4,6 +4,7 @@ import { JsonFile, JsonPatch, TextFile, javascript, typescript } from 'projen';
 
 const corePackageName = '@cdk-construct/core';
 const auroraPackageName = '@cdk-construct/aurora';
+const apiGatewayPackageName = '@cdk-construct/api-gateway';
 const s3PackageName = '@cdk-construct/s3';
 const sqsPackageName = '@cdk-construct/sqs';
 const iamPackageName = '@cdk-construct/iam';
@@ -68,6 +69,11 @@ const workspacePackages = [
     service: 'aurora',
     packageName: auroraPackageName,
     path: 'packages/aurora',
+  },
+  {
+    service: 'api-gateway',
+    packageName: apiGatewayPackageName,
+    path: 'packages/api-gateway',
   },
   {
     service: 's3',
@@ -379,6 +385,98 @@ new JsonFile(project, 'packages/aurora/package.json', {
 });
 
 new JsonFile(project, 'packages/aurora/tsconfig.json', {
+  obj: {
+    compilerOptions: {
+      rootDir: 'src',
+      outDir: 'lib',
+      alwaysStrict: true,
+      declaration: true,
+      declarationMap: true,
+      esModuleInterop: true,
+      experimentalDecorators: true,
+      forceConsistentCasingInFileNames: true,
+      inlineSourceMap: true,
+      inlineSources: true,
+      lib: ['ES2022'],
+      module: 'NodeNext',
+      moduleResolution: 'NodeNext',
+      noEmitOnError: false,
+      noFallthroughCasesInSwitch: true,
+      noImplicitAny: true,
+      noImplicitReturns: true,
+      noImplicitThis: true,
+      noUnusedLocals: true,
+      noUnusedParameters: true,
+      resolveJsonModule: true,
+      skipLibCheck: true,
+      strict: true,
+      strictNullChecks: true,
+      strictPropertyInitialization: true,
+      stripInternal: true,
+      target: 'ES2022',
+      types: ['node'],
+      verbatimModuleSyntax: true,
+    },
+    include: ['src/**/*.ts'],
+    exclude: ['lib', 'node_modules'],
+  },
+});
+
+new JsonFile(project, 'packages/api-gateway/package.json', {
+  readonly: false,
+  obj: {
+    name: apiGatewayPackageName,
+    version: packageVersion('packages/api-gateway/package.json'),
+    description: 'API Gateway constructs for AWS CDK',
+    repository: {
+      type: 'git',
+      url: repositoryUrl,
+      directory: 'packages/api-gateway',
+    },
+    author: {
+      name: 'crmagz',
+      email: '33166233+crmagz@users.noreply.github.com',
+    },
+    license: 'Apache-2.0',
+    type: 'module',
+    main: 'lib/index.js',
+    types: 'lib/index.d.ts',
+    exports: {
+      '.': {
+        types: './lib/index.d.ts',
+        import: './lib/index.js',
+      },
+    },
+    files: ['lib', 'README.md', 'docs'],
+    sideEffects: false,
+    publishConfig: {
+      access: 'public',
+    },
+    scripts: {
+      build: 'tsc -p tsconfig.json',
+      clean: 'rm -rf lib tsconfig.tsbuildinfo',
+      package: 'npm pack --pack-destination ../../dist/js',
+    },
+    dependencies: {
+      [corePackageName]: `^${packageVersion('packages/core/package.json')}`,
+    },
+    peerDependencies: {
+      'aws-cdk-lib': awsCdkLibPeerVersion,
+      constructs: constructsPeerVersion,
+    },
+    devDependencies: {
+      'aws-cdk-lib': awsCdkLibVersion,
+      constructs: constructsVersion,
+    },
+    keywords: ['aws-cdk', 'cdk', 'constructs', 'api-gateway', 'api', 'typescript', 'esm'],
+    engines: {
+      node: '>= 20.0.0',
+    },
+    packageManager: `npm@${npmVersion}`,
+  },
+});
+
+new JsonFile(project, 'packages/api-gateway/tsconfig.json', {
   obj: {
     compilerOptions: {
       rootDir: 'src',
@@ -977,7 +1075,7 @@ new JsonFile(project, 'ferrflow.json', {
       anonymous_telemetry: false,
       versioning: 'semver',
       tagTemplate: '{name}/v{version}',
-      recoverMissedReleases: true,
+      recoverMissedReleases: false,
       releaseCommitMode: 'commit',
       releaseCommitScope: 'per-package',
       skipCi: true,

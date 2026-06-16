@@ -6,7 +6,7 @@
     "anonymous_telemetry": false,
     "versioning": "semver",
     "tagTemplate": "{name}/v{version}",
-    "recoverMissedReleases": true,
+    "recoverMissedReleases": false,
     "releaseCommitMode": "commit",
     "releaseCommitScope": "per-package",
     "skipCi": true
@@ -38,6 +38,20 @@
       ],
       "hooks": {
         "postPublish": "npm run build --workspace @cdk-construct/core && npm run build --workspace @cdk-construct/aurora && npm publish --workspace @cdk-construct/aurora --access public"
+      }
+    },
+    {
+      "name": "api-gateway",
+      "path": "packages/api-gateway",
+      "changelog": "packages/api-gateway/CHANGELOG.md",
+      "versionedFiles": [
+        {
+          "path": "packages/api-gateway/package.json",
+          "format": "json"
+        }
+      ],
+      "hooks": {
+        "postPublish": "npm run build --workspace @cdk-construct/core && npm run build --workspace @cdk-construct/api-gateway && npm publish --workspace @cdk-construct/api-gateway --access public"
       }
     },
     {

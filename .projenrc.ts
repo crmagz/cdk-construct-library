@@ -352,7 +352,7 @@ new JsonFile(project, 'packages/aurora/package.json', {
         import: './lib/index.js',
       },
     },
-    files: ['lib', 'README.md'],
+    files: ['lib', 'README.md', 'docs'],
     sideEffects: false,
     publishConfig: {
       access: 'public',
@@ -361,6 +361,9 @@ new JsonFile(project, 'packages/aurora/package.json', {
       build: 'tsc -p tsconfig.json',
       clean: 'rm -rf lib tsconfig.tsbuildinfo',
       package: 'npm pack --pack-destination ../../dist/js',
+    },
+    dependencies: {
+      [corePackageName]: `^${packageVersion('packages/core/package.json')}`,
     },
     peerDependencies: {
       'aws-cdk-lib': awsCdkLibPeerVersion,
@@ -977,7 +980,7 @@ new JsonFile(project, 'ferrflow.json', {
       anonymous_telemetry: false,
       versioning: 'semver',
       tagTemplate: '{name}/v{version}',
-      recoverMissedReleases: true,
+      recoverMissedReleases: false,
       releaseCommitMode: 'commit',
       releaseCommitScope: 'per-package',
       skipCi: true,

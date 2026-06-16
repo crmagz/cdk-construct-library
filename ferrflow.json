@@ -6,7 +6,7 @@
     "anonymous_telemetry": false,
     "versioning": "semver",
     "tagTemplate": "{name}/v{version}",
-    "recoverMissedReleases": true,
+    "recoverMissedReleases": false,
     "releaseCommitMode": "commit",
     "releaseCommitScope": "per-package",
     "skipCi": true

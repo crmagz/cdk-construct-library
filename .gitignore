@@ -64,6 +64,8 @@ junit.xml
 !/packages/cloudwatch/tsconfig.json
 !/packages/bedrock/package.json
 !/packages/bedrock/tsconfig.json
+!/packages/eks/package.json
+!/packages/eks/tsconfig.json
 !/packages/elasticache/package.json
 !/packages/elasticache/tsconfig.json
 !/packages/opensearch/package.json

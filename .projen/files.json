@@ -20,6 +20,7 @@
     "ferrflow.json",
     "lefthook.yml",
     "LICENSE",
+    "packages/api-gateway/tsconfig.json",
     "packages/aurora/tsconfig.json",
     "packages/cloudfront/tsconfig.json",
     "packages/cloudwatch/tsconfig.json",

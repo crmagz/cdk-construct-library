@@ -19,13 +19,14 @@
     "package": "projen package",
     "post-compile": "projen post-compile",
     "pre-compile": "projen pre-compile",
+    "release:check": "projen release:check",
     "security": "projen security",
     "test": "projen test",
     "test:watch": "projen test:watch",
     "watch": "projen watch",
     "projen": "projen",
     "hooks:install": "lefthook install",
-    "hooks:run": "lefthook run pre-commit",
+    "hooks:run": "lefthook run pre-commit && lefthook run pre-push",
     "prepare": "lefthook install"
   },
   "author": {

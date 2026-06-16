@@ -783,7 +783,7 @@ new JsonFile(project, 'ferrflow.json', {
       tagTemplate: '{name}/v{version}',
       recoverMissedReleases: true,
       releaseCommitMode: 'commit',
-      releaseCommitScope: 'grouped',
+      releaseCommitScope: 'per-package',
       skipCi: true,
     },
     package: workspacePackages.map((workspacePackage) => ({
@@ -1057,6 +1057,11 @@ project.addTask('security', {
   exec: 'NODE_OPTIONS=--experimental-vm-modules jest --testMatch "<rootDir>/packages/*/test/**/*.security.test.ts" --passWithNoTests',
 });
 
+project.addTask('release:check', {
+  description: 'Validate releasable conventional commits map to package paths',
+  exec: 'node scripts/validate-release-scopes.mjs',
+});
+
 project.addTask('deploy', {
   description: 'Publish releasable workspace packages with FerrFlow',
   exec: 'ferrflow release',
@@ -1073,6 +1078,11 @@ new TextFile(project, 'lefthook.yml', {
     '      run: npm run format:check',
     '    security:',
     '      run: npm run security',
+    '',
+    'pre-push:',
+    '  commands:',
+    '    release-check:',
+    '      run: npm run release:check',
     '',
   ],
 });
@@ -1116,8 +1126,9 @@ project.package.setScript('format:check', 'projen format:check');
 project.package.setScript('clean', 'projen clean');
 project.package.setScript('deploy', 'projen deploy');
 project.package.setScript('security', 'projen security');
+project.package.setScript('release:check', 'projen release:check');
 project.package.setScript('hooks:install', 'lefthook install');
-project.package.setScript('hooks:run', 'lefthook run pre-commit');
+project.package.setScript('hooks:run', 'lefthook run pre-commit && lefthook run pre-push');
 project.package.setScript('prepare', 'lefthook install');
 
 project.package.file.patch(
@@ -1157,30 +1168,39 @@ project.github
   );
 
 project.github?.tryFindWorkflow('build')?.file?.patch(
+  JsonPatch.add('/jobs/build/steps/0/with/fetch-depth', 0),
   JsonPatch.replace('/jobs/build/steps/2/run', 'npm ci'),
   JsonPatch.replace('/jobs/build/steps/3/name', 'synth'),
   JsonPatch.replace('/jobs/build/steps/3/run', 'npx projen default'),
   JsonPatch.add('/jobs/build/steps/4', {
+    name: 'release:check',
+    if: "${{ github.event_name == 'pull_request' }}",
+    run: [
+      'git fetch https://github.com/${{ github.repository }}.git ${{ github.event.pull_request.base.ref }} --depth=1',
+      'npm run release:check -- --base FETCH_HEAD',
+    ].join('\n'),
+  }),
+  JsonPatch.add('/jobs/build/steps/5', {
     name: 'format:check',
     run: 'npm run format:check',
   }),
-  JsonPatch.add('/jobs/build/steps/5', {
+  JsonPatch.add('/jobs/build/steps/6', {
     name: 'lint',
     run: 'npm run lint',
   }),
-  JsonPatch.add('/jobs/build/steps/6', {
+  JsonPatch.add('/jobs/build/steps/7', {
     name: 'security',
     run: 'npm run security',
   }),
-  JsonPatch.add('/jobs/build/steps/7', {
+  JsonPatch.add('/jobs/build/steps/8', {
     name: 'test',
     run: 'npm test',
   }),
-  JsonPatch.add('/jobs/build/steps/8', {
+  JsonPatch.add('/jobs/build/steps/9', {
     name: 'compile',
     run: 'npm run compile',
   }),
-  JsonPatch.add('/jobs/build/steps/9', {
+  JsonPatch.add('/jobs/build/steps/10', {
     name: 'package',
     run: 'npm run package',
   }),

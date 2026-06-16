@@ -20,6 +20,7 @@ test('ferrflow release config covers every workspace package', async () => {
   assert.equal(ferrflow.workspace.versioning, 'semver');
   assert.equal(ferrflow.workspace.tagTemplate, '{name}/v{version}');
   assert.equal(ferrflow.workspace.recoverMissedReleases, true);
+  assert.equal(ferrflow.workspace.releaseCommitScope, 'per-package');
 
   const packageDirectories = Object.keys(packageLock.packages)
     .filter((packagePath) => /^packages\/[^/]+$/.test(packagePath))

@@ -8,7 +8,7 @@
     "tagTemplate": "{name}/v{version}",
     "recoverMissedReleases": true,
     "releaseCommitMode": "commit",
-    "releaseCommitScope": "grouped",
+    "releaseCommitScope": "per-package",
     "skipCi": true
   },
   "package": [

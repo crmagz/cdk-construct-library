@@ -169,6 +169,15 @@
       "name": "pre-compile",
       "description": "Prepare the project for compilation"
     },
+    "release:check": {
+      "name": "release:check",
+      "description": "Validate releasable conventional commits map to package paths",
+      "steps": [
+        {
+          "exec": "node scripts/validate-release-scopes.mjs"
+        }
+      ]
+    },
     "security": {
       "name": "security",
       "description": "Run CDK security policy validation tests",

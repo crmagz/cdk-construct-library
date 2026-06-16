@@ -7,3 +7,8 @@ pre-commit:
       run: npm run format:check
     security:
       run: npm run security
+
+pre-push:
+  commands:
+    release-check:
+      run: npm run release:check

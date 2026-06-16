@@ -16,6 +16,32 @@ feat(cloudfront): add distribution construct
 Write commit subjects as the decision made, not a file list. Keep them short
 enough to read cleanly in generated release notes.
 
+Releasable commit types must target a configured package scope and touch that
+package path:
+
+```text
+feat(s3): add bucket construct
+fix(cloudfront): preserve response header overrides
+perf(core): reduce environment config allocations
+```
+
+Repo-only changes should use non-releasable types so package changelogs do not
+pick up unrelated release, CI, build, or documentation work:
+
+```text
+ci(release): build core before package publish
+build(projen): centralize cdk dependency versions
+docs(release): explain package baseline tags
+chore(repo): ignore local agent instruction files
+```
+
+`npm run release:check` validates PR commits against the configured workspace
+packages. A `feat`, `fix`, `perf`, `refactor`, or breaking-change commit must
+use a package scope such as `s3` and touch `packages/s3/`. It may touch
+repo-level generated files in the same commit, but it must not touch another
+package directory. CI runs the same guard, and Lefthook runs it before push so
+bad package-scoped release commits are caught before they leave the workstation.
+
 ## Semver Rules
 
 FerrFlow evaluates commits that touched each `packages/<service>` directory
@@ -43,6 +69,19 @@ s3/v0.1.0
 cloudfront/v0.1.0
 ```
 
+Before merging a package PR for a package that has never been released, create a
+package-specific baseline tag on current `main`:
+
+```sh
+git fetch origin main --tags
+git tag <service>/v0.0.0 origin/main
+git push origin <service>/v0.0.0
+```
+
+The baseline tag gives FerrFlow a clean lower bound for the first real package
+release. Without it, the first release for a new package can collect older
+semver-relevant commits from repository history.
+
 ## Publish
 
 Merging a releasable PR to `main` runs `.github/workflows/release.yml`. The
@@ -52,6 +91,9 @@ tags, creates GitHub releases, and runs each package's publish hook.
 
 The publish hooks build the changed workspaces and publish them with npm trusted
 publishing and provenance from the `release.yml` workflow.
+
+FerrFlow writes one release commit per package so package bumps can be audited
+and reverted independently.
 
 Each package must already exist in npm and have trusted publishing configured
 for this repository and the `release.yml` workflow before CI can publish it.

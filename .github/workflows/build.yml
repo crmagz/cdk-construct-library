@@ -19,6 +19,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
+          fetch-depth: 0
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
@@ -28,6 +29,11 @@ jobs:
         run: npm ci
       - name: synth
         run: npx projen default
+      - name: release:check
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |-
+          git fetch https://github.com/${{ github.repository }}.git ${{ github.event.pull_request.base.ref }} --depth=1
+          npm run release:check -- --base FETCH_HEAD
       - name: format:check
         run: npm run format:check
       - name: lint

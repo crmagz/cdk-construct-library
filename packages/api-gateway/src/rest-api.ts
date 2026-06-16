@@ -4,6 +4,7 @@ import {
   AccessLogFormat,
   AuthorizationType,
   EndpointType,
+  IpAddressType,
   LogGroupLogDestination,
   MethodLoggingLevel,
   RequestValidator,
@@ -15,15 +16,28 @@ import type {
   RestApiProps,
   StageOptions,
 } from 'aws-cdk-lib/aws-apigateway';
+import {
+  InterfaceVpcEndpoint,
+  InterfaceVpcEndpointAwsService,
+  Peer,
+  Port,
+  SecurityGroup,
+} from 'aws-cdk-lib/aws-ec2';
+import type { IVpcEndpoint } from 'aws-cdk-lib/aws-ec2';
+import { AnyPrincipal, Effect, PolicyDocument, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { LogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs';
 import type { ILogGroup } from 'aws-cdk-lib/aws-logs';
 import { Construct } from 'constructs';
 
 import type {
   ApiGatewayRestApiDefaults,
-  ApiGatewayRestApiProps,
+  ApiGatewayRestApiBaseProps,
   ApiGatewayRestApiResources,
+  ApiGatewayVpcEndpointProps,
+  ApiGatewayVpcEndpointResources,
   CreateApiGatewayRestApiResourceProps,
+  PrivateApiGatewayRestApiProps,
+  RegionalApiGatewayRestApiProps,
   RestApiAccessLogGroupResourceProps,
   RestApiRequestValidatorResourceProps,
   RestApiResourceProps,
@@ -37,7 +51,7 @@ const DEFAULT_NON_PROD_THROTTLING_BURST_LIMIT = 200;
 const DEFAULT_PROD_THROTTLING_RATE_LIMIT = 500;
 const DEFAULT_NON_PROD_THROTTLING_RATE_LIMIT = 100;
 
-const defaultsForEnvironment = (props: ApiGatewayRestApiProps): ApiGatewayRestApiDefaults => {
+const defaultsForEnvironment = (props: ApiGatewayRestApiBaseProps): ApiGatewayRestApiDefaults => {
   const environment = resolveEnvironmentConfig(props);
   const production = isProductionEnvironment(environment);
 
@@ -57,14 +71,14 @@ const defaultsForEnvironment = (props: ApiGatewayRestApiProps): ApiGatewayRestAp
 };
 
 const resolveStageName = (
-  props: ApiGatewayRestApiProps,
+  props: ApiGatewayRestApiBaseProps,
   defaults: ApiGatewayRestApiDefaults,
 ): string => {
   return props.stageName ?? defaults.stageName;
 };
 
 const resolveAccessLogGroupName = (
-  props: ApiGatewayRestApiProps,
+  props: ApiGatewayRestApiBaseProps,
   defaults: ApiGatewayRestApiDefaults,
 ): string => {
   return (
@@ -73,7 +87,7 @@ const resolveAccessLogGroupName = (
   );
 };
 
-const createAccessLogFormat = (props: ApiGatewayRestApiProps): AccessLogFormat => {
+const createAccessLogFormat = (props: ApiGatewayRestApiBaseProps): AccessLogFormat => {
   return (
     props.accessLogFormat ??
     AccessLogFormat.jsonWithStandardFields({
@@ -91,8 +105,8 @@ const createAccessLogFormat = (props: ApiGatewayRestApiProps): AccessLogFormat =
 };
 
 const sanitizeDeployOptions = (
-  deployOptions: ApiGatewayRestApiProps['deployOptions'],
-): ApiGatewayRestApiProps['deployOptions'] => {
+  deployOptions: ApiGatewayRestApiBaseProps['deployOptions'],
+): ApiGatewayRestApiBaseProps['deployOptions'] => {
   if (!deployOptions) {
     return undefined;
   }
@@ -104,7 +118,7 @@ const sanitizeDeployOptions = (
 };
 
 const createDeployOptions = (
-  props: ApiGatewayRestApiProps,
+  props: ApiGatewayRestApiBaseProps,
   defaults: ApiGatewayRestApiDefaults,
   accessLogGroup: ILogGroup,
 ): StageOptions => {
@@ -122,25 +136,29 @@ const createDeployOptions = (
   };
 };
 
-const createDefaultMethodOptions = (props: ApiGatewayRestApiProps): MethodOptions => {
+const createDefaultMethodOptions = (props: ApiGatewayRestApiBaseProps): MethodOptions => {
   return {
     authorizationType: AuthorizationType.IAM,
     ...props.restApiOverrides?.defaultMethodOptions,
   };
 };
 
-const createEndpointConfiguration = (props: ApiGatewayRestApiProps): EndpointConfiguration => {
+const createRegionalEndpointConfiguration = (
+  props: RegionalApiGatewayRestApiProps,
+): EndpointConfiguration => {
   return {
     types: [EndpointType.REGIONAL],
-    ...props.restApiOverrides?.endpointConfiguration,
+    ipAddressType: props.ipAddressType,
   };
 };
 
 type UnsafeRestApiOverrides = RestApiOverrides &
-  Partial<Pick<RestApiProps, 'deployOptions' | 'description' | 'restApiName'>>;
+  Partial<
+    Pick<RestApiProps, 'deployOptions' | 'description' | 'endpointConfiguration' | 'restApiName'>
+  >;
 
 const sanitizeRestApiOverrides = (
-  overrides: ApiGatewayRestApiProps['restApiOverrides'],
+  overrides: ApiGatewayRestApiBaseProps['restApiOverrides'],
 ): RestApiOverrides | undefined => {
   if (!overrides) {
     return undefined;
@@ -149,28 +167,148 @@ const sanitizeRestApiOverrides = (
   const safeOverrides = { ...(overrides as UnsafeRestApiOverrides) };
   delete safeOverrides.deployOptions;
   delete safeOverrides.description;
+  delete safeOverrides.endpointConfiguration;
   delete safeOverrides.restApiName;
 
   return safeOverrides;
 };
 
-export class ApiGatewayRestApi extends Construct {
+const importVpcEndpoints = (
+  scope: Construct,
+  endpointIds: readonly string[] | undefined,
+): readonly IVpcEndpoint[] => {
+  return (endpointIds ?? []).map((vpcEndpointId, index) =>
+    InterfaceVpcEndpoint.fromInterfaceVpcEndpointAttributes(scope, `ImportedVpcEndpoint${index}`, {
+      port: 443,
+      vpcEndpointId,
+    }),
+  );
+};
+
+const resolvePrivateVpcEndpoints = (
+  scope: Construct,
+  props: PrivateApiGatewayRestApiProps,
+): readonly IVpcEndpoint[] => {
+  const endpoints = [
+    ...(props.vpcEndpoints ?? []),
+    ...importVpcEndpoints(scope, props.vpcEndpointIds),
+  ];
+
+  if (endpoints.length === 0) {
+    throw new Error('Private API Gateway REST APIs require at least one VPC endpoint.');
+  }
+
+  return endpoints;
+};
+
+const resolveSourceVpcEndpointIds = (
+  endpoints: readonly IVpcEndpoint[],
+  props: PrivateApiGatewayRestApiProps,
+): readonly string[] => {
+  const endpointIds =
+    props.sourceVpcEndpointIds ?? endpoints.map((endpoint) => endpoint.vpcEndpointId);
+
+  if (endpointIds.length === 0) {
+    throw new Error('Private API Gateway REST APIs require at least one source VPC endpoint ID.');
+  }
+
+  return endpointIds;
+};
+
+const createPrivateEndpointConfiguration = (
+  endpoints: readonly IVpcEndpoint[],
+  props: PrivateApiGatewayRestApiProps,
+): EndpointConfiguration => {
+  return {
+    types: [EndpointType.PRIVATE],
+    ipAddressType: props.ipAddressType ?? IpAddressType.DUAL_STACK,
+    vpcEndpoints: [...endpoints],
+  };
+};
+
+const createPrivateApiResourcePolicy = (
+  sourceVpcEndpointIds: readonly string[],
+): PolicyDocument => {
+  return new PolicyDocument({
+    assignSids: true,
+    statements: [
+      new PolicyStatement({
+        sid: 'AllowInvokeFromVpcEndpoints',
+        effect: Effect.ALLOW,
+        principals: [new AnyPrincipal()],
+        actions: ['execute-api:Invoke'],
+        resources: ['execute-api:/*'],
+        conditions: {
+          StringEquals: {
+            'aws:SourceVpce': [...sourceVpcEndpointIds],
+          },
+        },
+      }),
+    ],
+  });
+};
+
+export class RegionalApiGatewayRestApi extends Construct {
   public readonly api: RestApi;
   public readonly accessLogGroup: LogGroup;
   public readonly requestValidator: RequestValidator;
 
-  public constructor(scope: Construct, id: string, props: ApiGatewayRestApiProps) {
+  public constructor(scope: Construct, id: string, props: RegionalApiGatewayRestApiProps) {
     super(scope, id);
 
     const resources = createApiGatewayRestApiResources({
       scope: this,
       id: 'Resource',
       props,
+      endpointConfiguration: createRegionalEndpointConfiguration(props),
     });
 
     this.api = resources.api;
     this.accessLogGroup = resources.accessLogGroup;
     this.requestValidator = resources.requestValidator;
+  }
+}
+
+export class PrivateApiGatewayRestApi extends Construct {
+  public readonly api: RestApi;
+  public readonly accessLogGroup: LogGroup;
+  public readonly requestValidator: RequestValidator;
+  public readonly vpcEndpoints: readonly IVpcEndpoint[];
+
+  public constructor(scope: Construct, id: string, props: PrivateApiGatewayRestApiProps) {
+    super(scope, id);
+
+    this.vpcEndpoints = resolvePrivateVpcEndpoints(this, props);
+
+    const resources = createApiGatewayRestApiResources({
+      scope: this,
+      id: 'Resource',
+      props,
+      endpointConfiguration: createPrivateEndpointConfiguration(this.vpcEndpoints, props),
+      policy: createPrivateApiResourcePolicy(resolveSourceVpcEndpointIds(this.vpcEndpoints, props)),
+    });
+
+    this.api = resources.api;
+    this.accessLogGroup = resources.accessLogGroup;
+    this.requestValidator = resources.requestValidator;
+  }
+}
+
+export class ApiGatewayVpcEndpoint extends Construct {
+  public readonly endpoint: IVpcEndpoint;
+  public readonly securityGroup: SecurityGroup;
+
+  public constructor(scope: Construct, id: string, props: ApiGatewayVpcEndpointProps) {
+    super(scope, id);
+
+    const resources = createApiGatewayVpcEndpointResources({
+      scope: this,
+      id: 'Resource',
+      props,
+    });
+
+    this.endpoint = resources.endpoint;
+    this.securityGroup = resources.securityGroup;
   }
 }
 
@@ -188,7 +326,8 @@ export const createRestApiAccessLogGroupResource = (
 };
 
 export const createRestApiResource = (resourceProps: RestApiResourceProps): RestApi => {
-  const { scope, id, props, defaults, accessLogGroup } = resourceProps;
+  const { scope, id, props, defaults, accessLogGroup, endpointConfiguration, policy } =
+    resourceProps;
 
   return new RestApi(scope, `${id}Api`, {
     ...sanitizeRestApiOverrides(props.restApiOverrides),
@@ -197,7 +336,8 @@ export const createRestApiResource = (resourceProps: RestApiResourceProps): Rest
     cloudWatchRole: true,
     deployOptions: createDeployOptions(props, defaults, accessLogGroup),
     defaultMethodOptions: createDefaultMethodOptions(props),
-    endpointConfiguration: createEndpointConfiguration(props),
+    endpointConfiguration,
+    policy,
   });
 };
 
@@ -236,16 +376,74 @@ export const createApiGatewayRestApiResources = (
   return { api, accessLogGroup, requestValidator };
 };
 
-export const createApiGatewayRestApi = (
+export const createRegionalApiGatewayRestApi = (
   scope: Construct,
   id: string,
-  props: ApiGatewayRestApiProps,
+  props: RegionalApiGatewayRestApiProps,
 ): ApiGatewayRestApiResources => {
-  const restApi = new ApiGatewayRestApi(scope, id, props);
+  const restApi = new RegionalApiGatewayRestApi(scope, id, props);
 
   return {
     api: restApi.api,
     accessLogGroup: restApi.accessLogGroup,
     requestValidator: restApi.requestValidator,
+  };
+};
+
+export const createPrivateApiGatewayRestApi = (
+  scope: Construct,
+  id: string,
+  props: PrivateApiGatewayRestApiProps,
+): ApiGatewayRestApiResources => {
+  const restApi = new PrivateApiGatewayRestApi(scope, id, props);
+
+  return {
+    api: restApi.api,
+    accessLogGroup: restApi.accessLogGroup,
+    requestValidator: restApi.requestValidator,
+  };
+};
+
+export const createApiGatewayVpcEndpointResources = (resourceProps: {
+  readonly scope: Construct;
+  readonly id: string;
+  readonly props: ApiGatewayVpcEndpointProps;
+}): ApiGatewayVpcEndpointResources => {
+  const { scope, id, props } = resourceProps;
+  const securityGroup = new SecurityGroup(scope, `${id}SecurityGroup`, {
+    allowAllOutbound: false,
+    description: props.securityGroupDescription ?? 'Security group for API Gateway VPC endpoint',
+    securityGroupName: props.securityGroupName,
+    vpc: props.vpc,
+    ...props.securityGroupOverrides,
+  });
+
+  for (const cidr of props.allowedCidrs ?? []) {
+    securityGroup.addIngressRule(Peer.ipv4(cidr), Port.tcp(443), 'Allow HTTPS from API clients');
+  }
+
+  const endpoint = new InterfaceVpcEndpoint(scope, `${id}Endpoint`, {
+    service: InterfaceVpcEndpointAwsService.APIGATEWAY,
+    open: false,
+    privateDnsEnabled: props.privateDnsEnabled ?? false,
+    securityGroups: [securityGroup],
+    subnets: props.subnets,
+    vpc: props.vpc,
+    ...props.endpointOverrides,
+  });
+
+  return { endpoint, securityGroup };
+};
+
+export const createApiGatewayVpcEndpoint = (
+  scope: Construct,
+  id: string,
+  props: ApiGatewayVpcEndpointProps,
+): ApiGatewayVpcEndpointResources => {
+  const endpoint = new ApiGatewayVpcEndpoint(scope, id, props);
+
+  return {
+    endpoint: endpoint.endpoint,
+    securityGroup: endpoint.securityGroup,
   };
 };

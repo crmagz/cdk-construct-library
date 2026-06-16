@@ -3,12 +3,22 @@ import type { RemovalPolicy } from 'aws-cdk-lib';
 import type {
   AccessLogFormat,
   EndpointConfiguration,
+  IpAddressType,
   RequestValidator,
   RestApi,
   RestApiProps,
   StageOptions,
 } from 'aws-cdk-lib/aws-apigateway';
+import type {
+  InterfaceVpcEndpointProps,
+  IVpc,
+  IVpcEndpoint,
+  SecurityGroup,
+  SecurityGroupProps,
+  SubnetSelection,
+} from 'aws-cdk-lib/aws-ec2';
 import type { ILogGroup, LogGroup, LogGroupProps, RetentionDays } from 'aws-cdk-lib/aws-logs';
+import type { PolicyDocument } from 'aws-cdk-lib/aws-iam';
 import type { Construct } from 'constructs';
 
 type ConstructOwnedRestApiOverrideKey =
@@ -17,17 +27,13 @@ type ConstructOwnedRestApiOverrideKey =
   | 'endpointConfiguration'
   | 'restApiName';
 
-export type RestApiOverrides = Omit<
-  CdkOverrides<RestApiProps>,
-  ConstructOwnedRestApiOverrideKey
-> & {
-  readonly endpointConfiguration?: Partial<EndpointConfiguration>;
-};
+export type RestApiOverrides = Omit<CdkOverrides<RestApiProps>, ConstructOwnedRestApiOverrideKey>;
 
-export type ApiGatewayRestApiProps = EnvironmentAwareProps & {
+export type ApiGatewayRestApiBaseProps = EnvironmentAwareProps & {
   readonly apiName: string;
   readonly description?: string;
   readonly stageName?: string;
+  readonly ipAddressType?: IpAddressType;
   readonly accessLogGroupName?: string;
   readonly accessLogFormat?: AccessLogFormat;
   readonly tracingEnabled?: boolean;
@@ -39,6 +45,14 @@ export type ApiGatewayRestApiProps = EnvironmentAwareProps & {
   readonly deployOptions?: CdkOverrides<StageOptions>;
   readonly restApiOverrides?: RestApiOverrides;
   readonly accessLogGroupOverrides?: CdkOverrides<LogGroupProps>;
+};
+
+export type RegionalApiGatewayRestApiProps = ApiGatewayRestApiBaseProps;
+
+export type PrivateApiGatewayRestApiProps = ApiGatewayRestApiBaseProps & {
+  readonly vpcEndpoints?: readonly IVpcEndpoint[];
+  readonly vpcEndpointIds?: readonly string[];
+  readonly sourceVpcEndpointIds?: readonly string[];
 };
 
 export type ApiGatewayRestApiDefaults = {
@@ -57,15 +71,38 @@ export type ApiGatewayRestApiResources = {
   readonly requestValidator: RequestValidator;
 };
 
+export type ApiGatewayVpcEndpointProps = {
+  readonly vpc: IVpc;
+  readonly allowedCidrs?: readonly string[];
+  readonly privateDnsEnabled?: boolean;
+  readonly subnets?: SubnetSelection;
+  readonly securityGroupDescription?: string;
+  readonly securityGroupName?: string;
+  readonly securityGroupOverrides?: CdkOverrides<Omit<SecurityGroupProps, 'vpc'>>;
+  readonly endpointOverrides?: CdkOverrides<
+    Omit<
+      InterfaceVpcEndpointProps,
+      'open' | 'privateDnsEnabled' | 'securityGroups' | 'service' | 'subnets' | 'vpc'
+    >
+  >;
+};
+
+export type ApiGatewayVpcEndpointResources = {
+  readonly endpoint: IVpcEndpoint;
+  readonly securityGroup: SecurityGroup;
+};
+
 export type RestApiAccessLogGroupResourceProps = {
   readonly scope: Construct;
   readonly id: string;
-  readonly props: ApiGatewayRestApiProps;
+  readonly props: ApiGatewayRestApiBaseProps;
   readonly defaults: ApiGatewayRestApiDefaults;
 };
 
 export type RestApiResourceProps = RestApiAccessLogGroupResourceProps & {
   readonly accessLogGroup: ILogGroup;
+  readonly endpointConfiguration: EndpointConfiguration;
+  readonly policy?: PolicyDocument;
 };
 
 export type RestApiRequestValidatorResourceProps = RestApiAccessLogGroupResourceProps & {
@@ -75,5 +112,7 @@ export type RestApiRequestValidatorResourceProps = RestApiAccessLogGroupResource
 export type CreateApiGatewayRestApiResourceProps = {
   readonly scope: Construct;
   readonly id: string;
-  readonly props: ApiGatewayRestApiProps;
+  readonly props: ApiGatewayRestApiBaseProps;
+  readonly endpointConfiguration: EndpointConfiguration;
+  readonly policy?: PolicyDocument;
 };

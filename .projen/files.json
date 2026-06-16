@@ -26,6 +26,7 @@
     "packages/iam/tsconfig.json",
     "packages/s3/tsconfig.json",
     "packages/sqs/tsconfig.json",
+    "packages/waf/tsconfig.json",
     "tsconfig.dev.json",
     "tsconfig.json"
   ],

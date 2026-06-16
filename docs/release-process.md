@@ -11,6 +11,7 @@ feat(s3): add bucket construct
 fix(core): preserve construct metadata
 perf(aurora): reduce generated policy size
 feat(cloudfront): add distribution construct
+feat(waf): add web acl construct
 ```
 
 Write commit subjects as the decision made, not a file list. Keep them short
@@ -63,10 +64,13 @@ Other commit types do not publish a package by themselves.
 Package releases use service-prefixed semver tags:
 
 ```text
-core/v0.1.0
-aurora/v0.1.0
-s3/v0.1.0
-cloudfront/v0.1.0
+core/v<semver>
+aurora/v<semver>
+s3/v<semver>
+sqs/v<semver>
+iam/v<semver>
+cloudfront/v<semver>
+waf/v<semver>
 ```
 
 Before merging a package PR for a package that has never been released, create a

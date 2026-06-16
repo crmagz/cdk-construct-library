@@ -11,6 +11,7 @@ const iamPackageName = '@cdk-construct/iam';
 const cloudfrontPackageName = '@cdk-construct/cloudfront';
 const wafPackageName = '@cdk-construct/waf';
 const cloudwatchPackageName = '@cdk-construct/cloudwatch';
+const bedrockPackageName = '@cdk-construct/bedrock';
 const elasticachePackageName = '@cdk-construct/elasticache';
 const opensearchPackageName = '@cdk-construct/opensearch';
 const repositoryUrl = 'git+https://github.com/crmagz/cdk-construct-library.git';
@@ -118,6 +119,11 @@ const workspacePackages = [
     service: 'cloudwatch',
     packageName: cloudwatchPackageName,
     path: 'packages/cloudwatch',
+  },
+  {
+    service: 'bedrock',
+    packageName: bedrockPackageName,
+    path: 'packages/bedrock',
   },
   {
     service: 'elasticache',
@@ -1053,6 +1059,98 @@ new JsonFile(project, 'packages/cloudwatch/package.json', {
 });
 
 new JsonFile(project, 'packages/cloudwatch/tsconfig.json', {
+  obj: {
+    compilerOptions: {
+      rootDir: 'src',
+      outDir: 'lib',
+      alwaysStrict: true,
+      declaration: true,
+      declarationMap: true,
+      esModuleInterop: true,
+      experimentalDecorators: true,
+      forceConsistentCasingInFileNames: true,
+      inlineSourceMap: true,
+      inlineSources: true,
+      lib: ['ES2022'],
+      module: 'NodeNext',
+      moduleResolution: 'NodeNext',
+      noEmitOnError: false,
+      noFallthroughCasesInSwitch: true,
+      noImplicitAny: true,
+      noImplicitReturns: true,
+      noImplicitThis: true,
+      noUnusedLocals: true,
+      noUnusedParameters: true,
+      resolveJsonModule: true,
+      skipLibCheck: true,
+      strict: true,
+      strictNullChecks: true,
+      strictPropertyInitialization: true,
+      stripInternal: true,
+      target: 'ES2022',
+      types: ['node'],
+      verbatimModuleSyntax: true,
+    },
+    include: ['src/**/*.ts'],
+    exclude: ['lib', 'node_modules'],
+  },
+});
+
+new JsonFile(project, 'packages/bedrock/package.json', {
+  readonly: false,
+  obj: {
+    name: bedrockPackageName,
+    version: packageVersion('packages/bedrock/package.json'),
+    description: 'Bedrock constructs for AWS CDK',
+    repository: {
+      type: 'git',
+      url: repositoryUrl,
+      directory: 'packages/bedrock',
+    },
+    author: {
+      name: 'crmagz',
+      email: '33166233+crmagz@users.noreply.github.com',
+    },
+    license: 'Apache-2.0',
+    type: 'module',
+    main: 'lib/index.js',
+    types: 'lib/index.d.ts',
+    exports: {
+      '.': {
+        types: './lib/index.d.ts',
+        import: './lib/index.js',
+      },
+    },
+    files: ['lib', 'README.md', 'docs'],
+    sideEffects: false,
+    publishConfig: {
+      access: 'public',
+    },
+    scripts: {
+      build: 'tsc -p tsconfig.json',
+      clean: 'rm -rf lib tsconfig.tsbuildinfo',
+      package: 'npm pack --pack-destination ../../dist/js',
+    },
+    dependencies: {
+      [corePackageName]: `^${packageVersion('packages/core/package.json')}`,
+    },
+    peerDependencies: {
+      'aws-cdk-lib': awsCdkLibPeerVersion,
+      constructs: constructsPeerVersion,
+    },
+    devDependencies: {
+      'aws-cdk-lib': awsCdkLibVersion,
+      constructs: constructsVersion,
+    },
+    keywords: ['aws-cdk', 'cdk', 'constructs', 'bedrock', 'ai', 'typescript', 'esm'],
+    engines: {
+      node: '>= 20.0.0',
+    },
+    packageManager: `npm@${npmVersion}`,
+  },
+});
+
+new JsonFile(project, 'packages/bedrock/tsconfig.json', {
   obj: {
     compilerOptions: {
       rootDir: 'src',

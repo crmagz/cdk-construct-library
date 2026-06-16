@@ -38,5 +38,7 @@
 /packages/s3/tsconfig.json linguist-generated
 /packages/sqs/package.json linguist-generated
 /packages/sqs/tsconfig.json linguist-generated
+/packages/waf/package.json linguist-generated
+/packages/waf/tsconfig.json linguist-generated
 /tsconfig.dev.json linguist-generated linguist-language=JSON-with-Comments
 /tsconfig.json linguist-generated linguist-language=JSON-with-Comments

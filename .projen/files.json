@@ -22,6 +22,7 @@
     "LICENSE",
     "packages/api-gateway/tsconfig.json",
     "packages/aurora/tsconfig.json",
+    "packages/bedrock/tsconfig.json",
     "packages/cloudfront/tsconfig.json",
     "packages/cloudwatch/tsconfig.json",
     "packages/core/tsconfig.json",

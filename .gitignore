@@ -62,6 +62,8 @@ junit.xml
 !/packages/waf/tsconfig.json
 !/packages/cloudwatch/package.json
 !/packages/cloudwatch/tsconfig.json
+!/packages/opensearch/package.json
+!/packages/opensearch/tsconfig.json
 !/ferrflow.json
 !/.github/release.yml
 !/.github/workflows/release.yml

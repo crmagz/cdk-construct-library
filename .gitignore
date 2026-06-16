@@ -58,6 +58,8 @@ junit.xml
 !/packages/cloudfront/tsconfig.json
 !/packages/waf/package.json
 !/packages/waf/tsconfig.json
+!/packages/cloudwatch/package.json
+!/packages/cloudwatch/tsconfig.json
 !/ferrflow.json
 !/.github/release.yml
 !/.github/workflows/release.yml

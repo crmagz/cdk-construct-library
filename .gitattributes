@@ -30,6 +30,8 @@
 /packages/api-gateway/tsconfig.json linguist-generated
 /packages/aurora/package.json linguist-generated
 /packages/aurora/tsconfig.json linguist-generated
+/packages/bedrock/package.json linguist-generated
+/packages/bedrock/tsconfig.json linguist-generated
 /packages/cloudfront/package.json linguist-generated
 /packages/cloudfront/tsconfig.json linguist-generated
 /packages/cloudwatch/package.json linguist-generated

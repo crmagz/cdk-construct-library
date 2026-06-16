@@ -157,6 +157,22 @@
       }
     },
     {
+      "name": "bedrock",
+      "path": "packages/bedrock",
+      "changelog": "packages/bedrock/CHANGELOG.md",
+      "versionedFiles": [
+        {
+          "path": "packages/bedrock/package.json",
+          "format": "json"
+        }
+      ],
+      "hooks": {
+        "preCommit": "node scripts/sanitize-ferrflow-changelog.mjs --package bedrock --changelog packages/bedrock/CHANGELOG.md",
+        "prePublish": "node scripts/validate-ferrflow-package-release.mjs --package bedrock --changelog packages/bedrock/CHANGELOG.md",
+        "postPublish": "node scripts/sanitize-ferrflow-github-release.mjs --package bedrock && npm run build --workspace @cdk-construct/core && npm run build --workspace @cdk-construct/bedrock && npm publish --workspace @cdk-construct/bedrock --access public"
+      }
+    },
+    {
       "name": "elasticache",
       "path": "packages/elasticache",
       "changelog": "packages/elasticache/CHANGELOG.md",

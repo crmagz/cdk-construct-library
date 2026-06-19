@@ -12,4 +12,3 @@ release.
 ### Features
 
 - feat(cloudwatch): add alarm construct
-- feat(waf): add web acl construct

@@ -50,6 +50,10 @@ test('ferrflow release config covers every workspace package', async () => {
         : `npm run build --workspace @cdk-construct/core && npm run build --workspace @cdk-construct/${service}`;
 
     assert.equal(
+      config.hooks.preCommit,
+      `node scripts/sanitize-ferrflow-changelog.mjs --package ${service} --changelog packages/${service}/CHANGELOG.md`,
+    );
+    assert.equal(
       config.hooks.postPublish,
       `${packageBuild} && npm publish --workspace @cdk-construct/${service} --access public`,
     );

@@ -43,11 +43,16 @@ repo-level generated files in the same commit, but it must not touch another
 package directory. CI runs the same guard, and Lefthook runs it before push so
 bad package-scoped release commits are caught before they leave the workstation.
 
+FerrFlow also runs a package changelog sanitizer before each generated release
+commit. The sanitizer keeps release-note entries whose conventional commit scope
+matches the package being released and removes entries from other packages or
+repo-only release maintenance.
+
 ## Semver Rules
 
-FerrFlow evaluates commits that touched each `packages/<service>` directory
-since that service's latest tag. `recoverMissedReleases` is enabled so a package
-that changed before the workflow was added can still be released later.
+FerrFlow evaluates package changes without missed-release recovery. The release
+range is intentionally bounded to the current merge so a package release does
+not gather older semver-relevant commits from unrelated packages.
 
 ```text
 feat: minor

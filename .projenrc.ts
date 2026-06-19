@@ -59,6 +59,9 @@ const releasePostPublishCommand = (packageName: string): string => {
   return `${buildCommand} && npm publish --workspace ${packageName} --access public`;
 };
 
+const sanitizeReleaseChangelogCommand = (service: string, packagePath: string): string =>
+  `node scripts/sanitize-ferrflow-changelog.mjs --package ${service} --changelog ${packagePath}/CHANGELOG.md`;
+
 const workspacePackages = [
   {
     service: 'core',
@@ -1091,6 +1094,7 @@ new JsonFile(project, 'ferrflow.json', {
         },
       ],
       hooks: {
+        preCommit: sanitizeReleaseChangelogCommand(workspacePackage.service, workspacePackage.path),
         postPublish: releasePostPublishCommand(workspacePackage.packageName),
       },
     })),

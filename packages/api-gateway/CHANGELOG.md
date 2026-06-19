@@ -10,8 +10,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 - feat(api-gateway): split private and regional api constructs
 - feat(api-gateway): add rest api construct
-- feat(cloudwatch): add alarm construct
-- feat(waf): add web acl construct
 
 ### Bug Fixes
 

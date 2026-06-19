@@ -24,7 +24,7 @@ import {
   Port,
   SecurityGroup,
 } from 'aws-cdk-lib/aws-ec2';
-import type { IVpcEndpoint } from 'aws-cdk-lib/aws-ec2';
+import type { IPeer, IVpcEndpoint } from 'aws-cdk-lib/aws-ec2';
 import { AnyPrincipal, Effect, PolicyDocument, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { LogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs';
 import type { ILogGroup } from 'aws-cdk-lib/aws-logs';
@@ -259,6 +259,10 @@ const createPrivateApiResourcePolicy = (
   });
 };
 
+const peerForCidr = (cidr: string): IPeer => {
+  return cidr.includes(':') ? Peer.ipv6(cidr) : Peer.ipv4(cidr);
+};
+
 export class RegionalApiGatewayRestApi extends Construct {
   public readonly api: RestApi;
   public readonly accessLogGroup: LogGroup;
@@ -429,17 +433,17 @@ export const createApiGatewayVpcEndpointResources = (resourceProps: {
   });
 
   for (const cidr of props.allowedCidrs ?? []) {
-    securityGroup.addIngressRule(Peer.ipv4(cidr), Port.tcp(443), 'Allow HTTPS from API clients');
+    securityGroup.addIngressRule(peerForCidr(cidr), Port.tcp(443), 'Allow HTTPS from API clients');
   }
 
   const endpoint = new InterfaceVpcEndpoint(scope, `${id}Endpoint`, {
+    ...props.endpointOverrides,
     service: InterfaceVpcEndpointAwsService.APIGATEWAY,
     open: false,
     privateDnsEnabled: props.privateDnsEnabled ?? false,
     securityGroups: [securityGroup],
     subnets: props.subnets,
     vpc: props.vpc,
-    ...props.endpointOverrides,
   });
 
   return { endpoint, securityGroup };

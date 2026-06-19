@@ -1,7 +1,7 @@
 import { EnvironmentName } from '@cdk-construct/core';
 import { App, Stack, Validations } from 'aws-cdk-lib';
-import { MockIntegration } from 'aws-cdk-lib/aws-apigateway';
 import { SubnetType, Vpc } from 'aws-cdk-lib/aws-ec2';
+import { Code, Function, Runtime } from 'aws-cdk-lib/aws-lambda';
 import { AwsSolutionsChecks } from 'cdk-nag';
 import type { IConstruct } from 'constructs';
 
@@ -22,6 +22,19 @@ const createSecurityApp = (): App => {
   Validations.of(app).addPlugins(new AwsSolutionsChecks(app, { verbose: true }));
 
   return app;
+};
+
+const createHandler = (stack: Stack, id = 'Handler'): Function => {
+  return new Function(stack, id, {
+    runtime: Runtime.NODEJS_LATEST,
+    handler: 'index.handler',
+    code: Code.fromInline(`
+      exports.handler = async () => ({
+        statusCode: 200,
+        body: JSON.stringify({ ok: true }),
+      });
+    `),
+  });
 };
 
 const acknowledgeNagFinding = (construct: IConstruct, id: string, reason: string): void => {
@@ -47,16 +60,28 @@ const acknowledgeApiGatewayFindings = (
   api: RegionalApiGatewayRestApi | PrivateApiGatewayRestApi,
 ): void => {
   const cloudWatchRoleResource = api.api.node.tryFindChild('CloudWatchRole')?.node.defaultChild;
+  const restApiResource = api.api.node.defaultChild;
   const stageResource = api.api.deploymentStage.node.defaultChild;
+  const methodResource = api.proxyResource.node.tryFindChild('ANY')?.node.defaultChild;
 
-  if (!cloudWatchRoleResource || !stageResource) {
+  if (!cloudWatchRoleResource || !restApiResource || !stageResource || !methodResource) {
     throw new Error('Expected API Gateway security fixture resources to be synthesized.');
   }
 
   acknowledgeNagFinding(
+    restApiResource,
+    'AwsSolutions-APIG2',
+    'The construct intentionally uses a Lambda proxy integration; request validation is owned by the Lambda application framework.',
+  );
+  acknowledgeNagFinding(
     stageResource,
     'AwsSolutions-APIG3',
     'WAF association is workload-specific and is intentionally left to the consuming stack.',
+  );
+  acknowledgeNagFinding(
+    methodResource,
+    'AwsSolutions-COG4',
+    'The construct defaults methods to IAM auth; Cognito auth is workload-specific.',
   );
   acknowledgeNagFinding(
     cloudWatchRoleResource,
@@ -65,41 +90,40 @@ const acknowledgeApiGatewayFindings = (
   );
 };
 
+const acknowledgeHandlerFindings = (handler: Function): void => {
+  const functionResource = handler.node.defaultChild;
+  const role = handler.role?.node.defaultChild;
+
+  if (!functionResource || !role) {
+    throw new Error('Expected Lambda handler role to be synthesized.');
+  }
+
+  acknowledgeNagFinding(
+    functionResource,
+    'AwsSolutions-L1',
+    'The fixture Lambda only exercises the proxy integration; handler runtime selection is owned by the consuming stack.',
+  );
+  acknowledgeNagFinding(
+    role,
+    'AwsSolutions-IAM4[Policy::arn:<AWS::Partition>:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole]',
+    'The fixture Lambda uses the AWS managed basic execution policy; handler roles are owned by the consuming stack.',
+  );
+};
+
 describe('API Gateway security', () => {
   it('passes AWS Solutions checks for the regional production fixture', () => {
     const app = createSecurityApp();
     const stack = new Stack(app, 'RegionalApiGatewayRestApiSecurityStack');
+    const handler = createHandler(stack);
 
     const api = new RegionalApiGatewayRestApi(stack, 'OrdersApi', {
       env: prodEnv,
       apiName: 'orders-api',
+      handler,
     });
-    const method = api.api.root.addMethod(
-      'GET',
-      new MockIntegration({
-        integrationResponses: [{ statusCode: '200' }],
-        requestTemplates: {
-          'application/json': '{"statusCode": 200}',
-        },
-      }),
-      {
-        methodResponses: [{ statusCode: '200' }],
-        requestValidator: api.requestValidator,
-      },
-    );
-    const cloudWatchRoleResource = api.api.node.tryFindChild('CloudWatchRole')?.node.defaultChild;
-    const methodResource = method.node.defaultChild;
-
-    if (!cloudWatchRoleResource || !methodResource) {
-      throw new Error('Expected API Gateway security fixture resources to be synthesized.');
-    }
 
     acknowledgeApiGatewayFindings(api);
-    acknowledgeNagFinding(
-      methodResource,
-      'AwsSolutions-COG4',
-      'The construct defaults methods to IAM auth; Cognito auth is workload-specific.',
-    );
+    acknowledgeHandlerFindings(handler);
 
     expect(() => app.synth()).not.toThrow();
   });
@@ -107,6 +131,7 @@ describe('API Gateway security', () => {
   it('passes AWS Solutions checks for the private production fixture', () => {
     const app = createSecurityApp();
     const stack = new Stack(app, 'PrivateApiGatewayRestApiSecurityStack');
+    const handler = createHandler(stack);
     const vpc = new Vpc(stack, 'Vpc', {
       maxAzs: 2,
       natGateways: 0,
@@ -124,26 +149,9 @@ describe('API Gateway security', () => {
     const api = new PrivateApiGatewayRestApi(stack, 'OrdersApi', {
       env: prodEnv,
       apiName: 'orders-private-api',
+      handler,
       vpcEndpoints: [endpoint.endpoint],
     });
-    const method = api.api.root.addMethod(
-      'GET',
-      new MockIntegration({
-        integrationResponses: [{ statusCode: '200' }],
-        requestTemplates: {
-          'application/json': '{"statusCode": 200}',
-        },
-      }),
-      {
-        methodResponses: [{ statusCode: '200' }],
-        requestValidator: api.requestValidator,
-      },
-    );
-    const methodResource = method.node.defaultChild;
-
-    if (!methodResource) {
-      throw new Error('Expected private API Gateway method to be synthesized.');
-    }
 
     acknowledgeNagFinding(
       vpc.node.defaultChild,
@@ -151,11 +159,7 @@ describe('API Gateway security', () => {
       'The fixture VPC exists only to synthesize the endpoint helper; flow logs are owned by the consuming network stack.',
     );
     acknowledgeApiGatewayFindings(api);
-    acknowledgeNagFinding(
-      methodResource,
-      'AwsSolutions-COG4',
-      'The construct defaults methods to IAM auth; Cognito auth is workload-specific.',
-    );
+    acknowledgeHandlerFindings(handler);
 
     expect(() => app.synth()).not.toThrow();
   });

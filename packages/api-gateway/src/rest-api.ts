@@ -5,14 +5,15 @@ import {
   AuthorizationType,
   EndpointType,
   IpAddressType,
+  LambdaIntegration,
   LogGroupLogDestination,
   MethodLoggingLevel,
-  RequestValidator,
   RestApi,
 } from 'aws-cdk-lib/aws-apigateway';
 import type {
   EndpointConfiguration,
   MethodOptions,
+  Resource,
   RestApiProps,
   StageOptions,
 } from 'aws-cdk-lib/aws-apigateway';
@@ -39,7 +40,7 @@ import type {
   PrivateApiGatewayRestApiProps,
   RegionalApiGatewayRestApiProps,
   RestApiAccessLogGroupResourceProps,
-  RestApiRequestValidatorResourceProps,
+  RestApiProxyResourceProps,
   RestApiResourceProps,
   RestApiOverrides,
 } from './types.js';
@@ -139,7 +140,7 @@ const createDeployOptions = (
 const createDefaultMethodOptions = (props: ApiGatewayRestApiBaseProps): MethodOptions => {
   return {
     authorizationType: AuthorizationType.IAM,
-    ...props.restApiOverrides?.defaultMethodOptions,
+    ...props.proxyMethodOptions,
   };
 };
 
@@ -154,7 +155,15 @@ const createRegionalEndpointConfiguration = (
 
 type UnsafeRestApiOverrides = RestApiOverrides &
   Partial<
-    Pick<RestApiProps, 'deployOptions' | 'description' | 'endpointConfiguration' | 'restApiName'>
+    Pick<
+      RestApiProps,
+      | 'defaultIntegration'
+      | 'defaultMethodOptions'
+      | 'deployOptions'
+      | 'description'
+      | 'endpointConfiguration'
+      | 'restApiName'
+    >
   >;
 
 const sanitizeRestApiOverrides = (
@@ -165,6 +174,8 @@ const sanitizeRestApiOverrides = (
   }
 
   const safeOverrides = { ...(overrides as UnsafeRestApiOverrides) };
+  delete safeOverrides.defaultIntegration;
+  delete safeOverrides.defaultMethodOptions;
   delete safeOverrides.deployOptions;
   delete safeOverrides.description;
   delete safeOverrides.endpointConfiguration;
@@ -251,7 +262,7 @@ const createPrivateApiResourcePolicy = (
 export class RegionalApiGatewayRestApi extends Construct {
   public readonly api: RestApi;
   public readonly accessLogGroup: LogGroup;
-  public readonly requestValidator: RequestValidator;
+  public readonly proxyResource: Resource;
 
   public constructor(scope: Construct, id: string, props: RegionalApiGatewayRestApiProps) {
     super(scope, id);
@@ -265,14 +276,14 @@ export class RegionalApiGatewayRestApi extends Construct {
 
     this.api = resources.api;
     this.accessLogGroup = resources.accessLogGroup;
-    this.requestValidator = resources.requestValidator;
+    this.proxyResource = resources.proxyResource;
   }
 }
 
 export class PrivateApiGatewayRestApi extends Construct {
   public readonly api: RestApi;
   public readonly accessLogGroup: LogGroup;
-  public readonly requestValidator: RequestValidator;
+  public readonly proxyResource: Resource;
   public readonly vpcEndpoints: readonly IVpcEndpoint[];
 
   public constructor(scope: Construct, id: string, props: PrivateApiGatewayRestApiProps) {
@@ -290,7 +301,7 @@ export class PrivateApiGatewayRestApi extends Construct {
 
     this.api = resources.api;
     this.accessLogGroup = resources.accessLogGroup;
-    this.requestValidator = resources.requestValidator;
+    this.proxyResource = resources.proxyResource;
   }
 }
 
@@ -335,23 +346,22 @@ export const createRestApiResource = (resourceProps: RestApiResourceProps): Rest
     description: props.description,
     cloudWatchRole: true,
     deployOptions: createDeployOptions(props, defaults, accessLogGroup),
-    defaultMethodOptions: createDefaultMethodOptions(props),
     endpointConfiguration,
     policy,
   });
 };
 
-export const createRestApiRequestValidatorResource = (
-  resourceProps: RestApiRequestValidatorResourceProps,
-): RequestValidator => {
-  const { scope, id, api } = resourceProps;
-
-  return new RequestValidator(scope, `${id}RequestValidator`, {
-    restApi: api,
-    requestValidatorName: `${api.restApiName}-default-validator`,
-    validateRequestBody: true,
-    validateRequestParameters: true,
+export const createRestApiProxyResource = (resourceProps: RestApiProxyResourceProps): Resource => {
+  const { props, api } = resourceProps;
+  const integration = new LambdaIntegration(props.handler, {
+    proxy: true,
+    ...props.proxyIntegrationOptions,
   });
+  const proxyResource = api.root.addResource('{proxy+}');
+
+  proxyResource.addMethod('ANY', integration, createDefaultMethodOptions(props));
+
+  return proxyResource;
 };
 
 export const createApiGatewayRestApiResources = (
@@ -367,13 +377,13 @@ export const createApiGatewayRestApiResources = (
     defaults,
     accessLogGroup,
   });
-  const requestValidator = createRestApiRequestValidatorResource({
+  const proxyResource = createRestApiProxyResource({
     ...resourceProps,
     defaults,
     api,
   });
 
-  return { api, accessLogGroup, requestValidator };
+  return { api, accessLogGroup, proxyResource };
 };
 
 export const createRegionalApiGatewayRestApi = (
@@ -386,7 +396,7 @@ export const createRegionalApiGatewayRestApi = (
   return {
     api: restApi.api,
     accessLogGroup: restApi.accessLogGroup,
-    requestValidator: restApi.requestValidator,
+    proxyResource: restApi.proxyResource,
   };
 };
 
@@ -400,7 +410,7 @@ export const createPrivateApiGatewayRestApi = (
   return {
     api: restApi.api,
     accessLogGroup: restApi.accessLogGroup,
-    requestValidator: restApi.requestValidator,
+    proxyResource: restApi.proxyResource,
   };
 };
 

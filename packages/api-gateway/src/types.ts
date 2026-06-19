@@ -4,7 +4,9 @@ import type {
   AccessLogFormat,
   EndpointConfiguration,
   IpAddressType,
-  RequestValidator,
+  LambdaIntegrationOptions,
+  MethodOptions,
+  Resource,
   RestApi,
   RestApiProps,
   StageOptions,
@@ -17,11 +19,14 @@ import type {
   SecurityGroupProps,
   SubnetSelection,
 } from 'aws-cdk-lib/aws-ec2';
+import type { IFunction } from 'aws-cdk-lib/aws-lambda';
 import type { ILogGroup, LogGroup, LogGroupProps, RetentionDays } from 'aws-cdk-lib/aws-logs';
 import type { PolicyDocument } from 'aws-cdk-lib/aws-iam';
 import type { Construct } from 'constructs';
 
 type ConstructOwnedRestApiOverrideKey =
+  | 'defaultIntegration'
+  | 'defaultMethodOptions'
   | 'deployOptions'
   | 'description'
   | 'endpointConfiguration'
@@ -31,6 +36,7 @@ export type RestApiOverrides = Omit<CdkOverrides<RestApiProps>, ConstructOwnedRe
 
 export type ApiGatewayRestApiBaseProps = EnvironmentAwareProps & {
   readonly apiName: string;
+  readonly handler: IFunction;
   readonly description?: string;
   readonly stageName?: string;
   readonly ipAddressType?: IpAddressType;
@@ -43,6 +49,8 @@ export type ApiGatewayRestApiBaseProps = EnvironmentAwareProps & {
   readonly logRetention?: RetentionDays;
   readonly logRemovalPolicy?: RemovalPolicy;
   readonly deployOptions?: CdkOverrides<StageOptions>;
+  readonly proxyIntegrationOptions?: CdkOverrides<LambdaIntegrationOptions>;
+  readonly proxyMethodOptions?: CdkOverrides<MethodOptions>;
   readonly restApiOverrides?: RestApiOverrides;
   readonly accessLogGroupOverrides?: CdkOverrides<LogGroupProps>;
 };
@@ -68,7 +76,7 @@ export type ApiGatewayRestApiDefaults = {
 export type ApiGatewayRestApiResources = {
   readonly api: RestApi;
   readonly accessLogGroup: LogGroup;
-  readonly requestValidator: RequestValidator;
+  readonly proxyResource: Resource;
 };
 
 export type ApiGatewayVpcEndpointProps = {
@@ -105,7 +113,7 @@ export type RestApiResourceProps = RestApiAccessLogGroupResourceProps & {
   readonly policy?: PolicyDocument;
 };
 
-export type RestApiRequestValidatorResourceProps = RestApiAccessLogGroupResourceProps & {
+export type RestApiProxyResourceProps = RestApiAccessLogGroupResourceProps & {
   readonly api: RestApi;
 };
 

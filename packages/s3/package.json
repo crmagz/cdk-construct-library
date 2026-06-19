@@ -1,6 +1,6 @@
 {
   "name": "@cdk-construct/s3",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "S3 bucket constructs for AWS CDK",
   "repository": {
     "type": "git",

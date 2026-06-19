@@ -2,7 +2,7 @@ import { EnvironmentName } from '@cdk-construct/core';
 import { Duration, RemovalPolicy, Stack } from 'aws-cdk-lib';
 import { Match, Template } from 'aws-cdk-lib/assertions';
 import { AuthorizationType, IpAddressType } from 'aws-cdk-lib/aws-apigateway';
-import { SubnetType, Vpc } from 'aws-cdk-lib/aws-ec2';
+import { InterfaceVpcEndpointAwsService, SubnetType, Vpc } from 'aws-cdk-lib/aws-ec2';
 import { Code, Function, Runtime } from 'aws-cdk-lib/aws-lambda';
 import { RetentionDays } from 'aws-cdk-lib/aws-logs';
 
@@ -423,7 +423,7 @@ describe('ApiGatewayVpcEndpoint', () => {
     });
     const endpoint = new ApiGatewayVpcEndpoint(stack, 'ApiGatewayEndpoint', {
       vpc,
-      allowedCidrs: ['10.0.0.0/24'],
+      allowedCidrs: ['10.0.0.0/24', '2001:db8::/64'],
     });
 
     expect(endpoint.endpoint).toBeDefined();
@@ -447,14 +447,65 @@ describe('ApiGatewayVpcEndpoint', () => {
       VpcEndpointType: 'Interface',
     });
     template.hasResourceProperties('AWS::EC2::SecurityGroup', {
-      SecurityGroupIngress: [
+      SecurityGroupIngress: Match.arrayWith([
         Match.objectLike({
           CidrIp: '10.0.0.0/24',
           FromPort: 443,
           IpProtocol: 'tcp',
           ToPort: 443,
         }),
+      ]),
+    });
+    template.hasResourceProperties('AWS::EC2::SecurityGroup', {
+      SecurityGroupIngress: Match.arrayWith([
+        Match.objectLike({
+          CidrIpv6: '2001:db8::/64',
+          FromPort: 443,
+          IpProtocol: 'tcp',
+          ToPort: 443,
+        }),
+      ]),
+    });
+  });
+
+  it('preserves endpoint invariants when unsafe endpoint overrides are provided', () => {
+    const stack = new Stack();
+    const vpc = new Vpc(stack, 'Vpc', {
+      maxAzs: 2,
+      natGateways: 0,
+      subnetConfiguration: [
+        {
+          name: 'Private',
+          subnetType: SubnetType.PRIVATE_ISOLATED,
+        },
       ],
+    });
+    new ApiGatewayVpcEndpoint(stack, 'ApiGatewayEndpoint', {
+      vpc,
+      allowedCidrs: ['10.0.0.0/24'],
+      endpointOverrides: {
+        open: true,
+        privateDnsEnabled: true,
+        service: InterfaceVpcEndpointAwsService.SQS,
+      } as unknown as never,
+    });
+
+    const template = Template.fromStack(stack);
+    template.hasResourceProperties('AWS::EC2::VPCEndpoint', {
+      PrivateDnsEnabled: false,
+      ServiceName: {
+        'Fn::Join': [
+          '',
+          [
+            'com.amazonaws.',
+            {
+              Ref: 'AWS::Region',
+            },
+            '.execute-api',
+          ],
+        ],
+      },
+      VpcEndpointType: 'Interface',
     });
   });
 

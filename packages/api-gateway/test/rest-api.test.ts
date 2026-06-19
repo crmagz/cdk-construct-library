@@ -1,13 +1,9 @@
 import { EnvironmentName } from '@cdk-construct/core';
-import { RemovalPolicy, Stack } from 'aws-cdk-lib';
+import { Duration, RemovalPolicy, Stack } from 'aws-cdk-lib';
 import { Match, Template } from 'aws-cdk-lib/assertions';
-import {
-  IpAddressType,
-  MockIntegration,
-  RequestValidator,
-  RestApi,
-} from 'aws-cdk-lib/aws-apigateway';
+import { AuthorizationType, IpAddressType } from 'aws-cdk-lib/aws-apigateway';
 import { SubnetType, Vpc } from 'aws-cdk-lib/aws-ec2';
+import { Code, Function, Runtime } from 'aws-cdk-lib/aws-lambda';
 import { RetentionDays } from 'aws-cdk-lib/aws-logs';
 
 import {
@@ -32,57 +28,77 @@ const devEnv = {
   region: 'us-east-1',
 };
 
+const createHandler = (stack: Stack, id = 'Handler'): Function => {
+  return new Function(stack, id, {
+    runtime: Runtime.NODEJS_LATEST,
+    handler: 'index.handler',
+    code: Code.fromInline(`
+      exports.handler = async () => ({
+        statusCode: 200,
+        body: JSON.stringify({ ok: true }),
+      });
+    `),
+  });
+};
+
 const synthesizeConstruct = (
   construct: RegionalApiGatewayRestApi | PrivateApiGatewayRestApi,
 ): Template => {
   return Template.fromStack(Stack.of(construct));
 };
 
-const addMockGetMethod = (api: RestApi, requestValidator: RequestValidator): void => {
-  api.root.addMethod(
-    'GET',
-    new MockIntegration({
-      integrationResponses: [{ statusCode: '200' }],
-      requestTemplates: {
-        'application/json': '{"statusCode": 200}',
+const assertProxyLambdaIntegration = (template: Template): void => {
+  template.resourceCountIs('AWS::ApiGateway::Resource', 1);
+  template.resourceCountIs('AWS::ApiGateway::Method', 1);
+  template.hasResourceProperties('AWS::ApiGateway::Resource', {
+    PathPart: '{proxy+}',
+  });
+  template.hasResourceProperties('AWS::ApiGateway::Method', {
+    AuthorizationType: 'AWS_IAM',
+    HttpMethod: 'ANY',
+    Integration: {
+      IntegrationHttpMethod: 'POST',
+      Type: 'AWS_PROXY',
+      Uri: {
+        'Fn::Join': [
+          '',
+          Match.arrayWith([
+            'arn:',
+            {
+              Ref: 'AWS::Partition',
+            },
+            ':apigateway:',
+          ]),
+        ],
       },
-    }),
-    {
-      methodResponses: [{ statusCode: '200' }],
-      requestValidator,
     },
-  );
+  });
 };
 
 describe('RegionalApiGatewayRestApi', () => {
-  it('creates a production REST API with operational defaults', () => {
+  it('creates a production REST API with a Lambda proxy route and operational defaults', () => {
     const stack = new Stack();
+    const handler = createHandler(stack);
     const api = new RegionalApiGatewayRestApi(stack, 'OrdersApi', {
       env: prodEnv,
       apiName: 'orders-api',
+      handler,
     });
-    addMockGetMethod(api.api, api.requestValidator);
 
     const template = synthesizeConstruct(api);
     template.resourceCountIs('AWS::ApiGateway::RestApi', 1);
     template.resourceCountIs('AWS::ApiGateway::Stage', 1);
+    template.resourceCountIs('AWS::ApiGateway::RequestValidator', 0);
     template.hasResourceProperties('AWS::ApiGateway::RestApi', {
       Name: 'orders-api',
       EndpointConfiguration: {
         Types: ['REGIONAL'],
       },
     });
-    template.hasResourceProperties('AWS::ApiGateway::Method', {
-      AuthorizationType: 'AWS_IAM',
-      HttpMethod: 'GET',
-      RequestValidatorId: {
-        Ref: Match.stringLikeRegexp('ResourceRequestValidator'),
-      },
-    });
-    template.hasResourceProperties('AWS::ApiGateway::RequestValidator', {
-      Name: 'orders-api-default-validator',
-      ValidateRequestBody: true,
-      ValidateRequestParameters: true,
+    assertProxyLambdaIntegration(template);
+    template.hasResourceProperties('AWS::Lambda::Permission', {
+      Action: 'lambda:InvokeFunction',
+      Principal: 'apigateway.amazonaws.com',
     });
     template.hasResourceProperties('AWS::Logs::LogGroup', {
       LogGroupName: '/aws/apigateway/orders-api/prod',
@@ -126,8 +142,8 @@ describe('RegionalApiGatewayRestApi', () => {
     const api = new RegionalApiGatewayRestApi(stack, 'DevApi', {
       env: devEnv,
       apiName: 'orders-api-dev',
+      handler: createHandler(stack),
     });
-    addMockGetMethod(api.api, api.requestValidator);
 
     const template = synthesizeConstruct(api);
     template.hasResourceProperties('AWS::Logs::LogGroup', {
@@ -149,21 +165,22 @@ describe('RegionalApiGatewayRestApi', () => {
     });
   });
 
-  it('supports direct CDK overrides without allowing endpoint type changes', () => {
+  it('supports direct CDK overrides without allowing endpoint or route integration changes', () => {
     const stack = new Stack();
     const api = new RegionalApiGatewayRestApi(stack, 'InternalApi', {
       env: devEnv,
       apiName: 'internal-api',
+      handler: createHandler(stack),
       description: 'Internal API',
       stageName: 'sandbox',
       logRetention: RetentionDays.ONE_WEEK,
       logRemovalPolicy: RemovalPolicy.RETAIN,
       throttlingBurstLimit: 25,
       throttlingRateLimit: 10,
+      proxyMethodOptions: {
+        apiKeyRequired: true,
+      },
       restApiOverrides: {
-        defaultMethodOptions: {
-          apiKeyRequired: true,
-        },
         disableExecuteApiEndpoint: true,
       },
       accessLogGroupOverrides: {
@@ -172,8 +189,10 @@ describe('RegionalApiGatewayRestApi', () => {
       deployOptions: {
         tracingEnabled: false,
       },
+      proxyIntegrationOptions: {
+        timeout: Duration.seconds(10),
+      },
     });
-    addMockGetMethod(api.api, api.requestValidator);
 
     const template = synthesizeConstruct(api);
     template.hasResourceProperties('AWS::ApiGateway::RestApi', {
@@ -205,6 +224,11 @@ describe('RegionalApiGatewayRestApi', () => {
     template.hasResourceProperties('AWS::ApiGateway::Method', {
       AuthorizationType: 'AWS_IAM',
       ApiKeyRequired: true,
+      HttpMethod: 'ANY',
+      Integration: Match.objectLike({
+        TimeoutInMillis: 10000,
+        Type: 'AWS_PROXY',
+      }),
     });
   });
 
@@ -213,9 +237,9 @@ describe('RegionalApiGatewayRestApi', () => {
     const api = new RegionalApiGatewayRestApi(stack, 'DualStackApi', {
       env: devEnv,
       apiName: 'dual-stack-api',
+      handler: createHandler(stack),
       ipAddressType: IpAddressType.DUAL_STACK,
     });
-    addMockGetMethod(api.api, api.requestValidator);
 
     const template = synthesizeConstruct(api);
     template.hasResourceProperties('AWS::ApiGateway::RestApi', {
@@ -232,13 +256,13 @@ describe('RegionalApiGatewayRestApi', () => {
     const api = new RegionalApiGatewayRestApi(stack, 'StageApi', {
       env: devEnv,
       apiName: 'stage-api',
+      handler: createHandler(stack),
       stageName: 'sandbox',
       deployOptions: {
         stageName: 'unsafe-deploy-stage',
         tracingEnabled: false,
       },
     });
-    addMockGetMethod(api.api, api.requestValidator);
 
     const template = synthesizeConstruct(api);
     template.hasResourceProperties('AWS::Logs::LogGroup', {
@@ -258,6 +282,10 @@ describe('RegionalApiGatewayRestApi', () => {
       endpointConfiguration: {
         types: ['EDGE'],
       },
+      defaultIntegration: {},
+      defaultMethodOptions: {
+        authorizationType: AuthorizationType.NONE,
+      },
       deployOptions: {
         stageName: 'unsafe-stage',
         tracingEnabled: false,
@@ -265,18 +293,15 @@ describe('RegionalApiGatewayRestApi', () => {
         throttlingBurstLimit: 9_999,
         throttlingRateLimit: 9_999,
       },
-      defaultMethodOptions: {
-        apiKeyRequired: true,
-      },
       disableExecuteApiEndpoint: true,
     } as unknown as RegionalApiGatewayRestApiProps['restApiOverrides'];
     const api = new RegionalApiGatewayRestApi(stack, 'SafeOverridesApi', {
       env: devEnv,
       apiName: 'owned-api-name',
+      handler: createHandler(stack),
       description: 'Owned description',
       restApiOverrides: unsafeRestApiOverrides,
     });
-    addMockGetMethod(api.api, api.requestValidator);
 
     const template = synthesizeConstruct(api);
     template.hasResourceProperties('AWS::ApiGateway::RestApi', {
@@ -298,10 +323,7 @@ describe('RegionalApiGatewayRestApi', () => {
         }),
       ],
     });
-    template.hasResourceProperties('AWS::ApiGateway::Method', {
-      AuthorizationType: 'AWS_IAM',
-      ApiKeyRequired: true,
-    });
+    assertProxyLambdaIntegration(template);
   });
 
   it('returns resources from the regional functional factory', () => {
@@ -309,25 +331,27 @@ describe('RegionalApiGatewayRestApi', () => {
     const resources = createRegionalApiGatewayRestApi(stack, 'FactoryApi', {
       env: prodEnv,
       apiName: 'factory-api',
+      handler: createHandler(stack),
     });
 
     expect(resources.api).toBeDefined();
     expect(resources.accessLogGroup).toBeDefined();
-    expect(resources.requestValidator).toBeDefined();
+    expect(resources.proxyResource).toBeDefined();
   });
 });
 
 describe('PrivateApiGatewayRestApi', () => {
-  it('creates a private REST API restricted to VPC endpoint source IDs', () => {
+  it('creates a private Lambda proxy REST API restricted to VPC endpoint source IDs', () => {
     const stack = new Stack();
     const api = new PrivateApiGatewayRestApi(stack, 'PrivateOrdersApi', {
       env: prodEnv,
       apiName: 'orders-private-api',
+      handler: createHandler(stack),
       vpcEndpointIds: ['vpce-0123456789abcdef0'],
     });
-    addMockGetMethod(api.api, api.requestValidator);
 
     const template = synthesizeConstruct(api);
+    assertProxyLambdaIntegration(template);
     template.hasResourceProperties('AWS::ApiGateway::RestApi', {
       Name: 'orders-private-api',
       EndpointConfiguration: {
@@ -364,6 +388,7 @@ describe('PrivateApiGatewayRestApi', () => {
         new PrivateApiGatewayRestApi(stack, 'MissingEndpointApi', {
           env: devEnv,
           apiName: 'missing-endpoint-api',
+          handler: createHandler(stack),
         }),
     ).toThrow('Private API Gateway REST APIs require at least one VPC endpoint.');
   });
@@ -373,12 +398,13 @@ describe('PrivateApiGatewayRestApi', () => {
     const resources = createPrivateApiGatewayRestApi(stack, 'FactoryPrivateApi', {
       env: prodEnv,
       apiName: 'factory-private-api',
+      handler: createHandler(stack),
       vpcEndpointIds: ['vpce-0123456789abcdef0'],
     });
 
     expect(resources.api).toBeDefined();
     expect(resources.accessLogGroup).toBeDefined();
-    expect(resources.requestValidator).toBeDefined();
+    expect(resources.proxyResource).toBeDefined();
   });
 });
 

@@ -18,7 +18,7 @@ export {
   createPrivateApiGatewayRestApi,
   createRegionalApiGatewayRestApi,
   createRestApiAccessLogGroupResource,
-  createRestApiRequestValidatorResource,
+  createRestApiProxyResource,
   createRestApiResource,
 } from './rest-api.js';
 export type {
@@ -31,6 +31,6 @@ export type {
   PrivateApiGatewayRestApiProps,
   RegionalApiGatewayRestApiProps,
   RestApiAccessLogGroupResourceProps,
-  RestApiRequestValidatorResourceProps,
+  RestApiProxyResourceProps,
   RestApiResourceProps,
 } from './types.js';

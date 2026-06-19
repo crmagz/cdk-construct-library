@@ -1,6 +1,6 @@
 {
   "name": "@cdk-construct/cloudwatch",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "CloudWatch constructs for AWS CDK",
   "repository": {
     "type": "git",

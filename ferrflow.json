@@ -157,6 +157,22 @@
       }
     },
     {
+      "name": "elasticache",
+      "path": "packages/elasticache",
+      "changelog": "packages/elasticache/CHANGELOG.md",
+      "versionedFiles": [
+        {
+          "path": "packages/elasticache/package.json",
+          "format": "json"
+        }
+      ],
+      "hooks": {
+        "preCommit": "node scripts/sanitize-ferrflow-changelog.mjs --package elasticache --changelog packages/elasticache/CHANGELOG.md",
+        "prePublish": "node scripts/validate-ferrflow-package-release.mjs --package elasticache --changelog packages/elasticache/CHANGELOG.md",
+        "postPublish": "node scripts/sanitize-ferrflow-github-release.mjs --package elasticache && npm run build --workspace @cdk-construct/core && npm run build --workspace @cdk-construct/elasticache && npm publish --workspace @cdk-construct/elasticache --access public"
+      }
+    },
+    {
       "name": "opensearch",
       "path": "packages/opensearch",
       "changelog": "packages/opensearch/CHANGELOG.md",

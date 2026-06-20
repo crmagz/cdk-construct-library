@@ -51,17 +51,23 @@ const packageVersion = (packageJsonPath: string, fallback = '0.0.0'): string => 
   }
 };
 
-const releasePostPublishCommand = (packageName: string): string => {
+const sanitizeGithubReleaseCommand = (service: string): string =>
+  `node scripts/sanitize-ferrflow-github-release.mjs --package ${service}`;
+
+const releasePostPublishCommand = (service: string, packageName: string): string => {
   const buildCommand =
     packageName === corePackageName
       ? `npm run build --workspace ${packageName}`
       : `npm run build --workspace ${corePackageName} && npm run build --workspace ${packageName}`;
 
-  return `${buildCommand} && npm publish --workspace ${packageName} --access public`;
+  return `${sanitizeGithubReleaseCommand(service)} && ${buildCommand} && npm publish --workspace ${packageName} --access public`;
 };
 
 const sanitizeReleaseChangelogCommand = (service: string, packagePath: string): string =>
   `node scripts/sanitize-ferrflow-changelog.mjs --package ${service} --changelog ${packagePath}/CHANGELOG.md`;
+
+const validatePackageReleaseCommand = (service: string, packagePath: string): string =>
+  `node scripts/validate-ferrflow-package-release.mjs --package ${service} --changelog ${packagePath}/CHANGELOG.md`;
 
 const workspacePackages = [
   {
@@ -1193,7 +1199,11 @@ new JsonFile(project, 'ferrflow.json', {
       ],
       hooks: {
         preCommit: sanitizeReleaseChangelogCommand(workspacePackage.service, workspacePackage.path),
-        postPublish: releasePostPublishCommand(workspacePackage.packageName),
+        prePublish: validatePackageReleaseCommand(workspacePackage.service, workspacePackage.path),
+        postPublish: releasePostPublishCommand(
+          workspacePackage.service,
+          workspacePackage.packageName,
+        ),
       },
     })),
   },

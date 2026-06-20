@@ -24,7 +24,8 @@
       ],
       "hooks": {
         "preCommit": "node scripts/sanitize-ferrflow-changelog.mjs --package core --changelog packages/core/CHANGELOG.md",
-        "postPublish": "npm run build --workspace @cdk-construct/core && npm publish --workspace @cdk-construct/core --access public"
+        "prePublish": "node scripts/validate-ferrflow-package-release.mjs --package core --changelog packages/core/CHANGELOG.md",
+        "postPublish": "node scripts/sanitize-ferrflow-github-release.mjs --package core && npm run build --workspace @cdk-construct/core && npm publish --workspace @cdk-construct/core --access public"
       }
     },
     {
@@ -39,7 +40,8 @@
       ],
       "hooks": {
         "preCommit": "node scripts/sanitize-ferrflow-changelog.mjs --package aurora --changelog packages/aurora/CHANGELOG.md",
-        "postPublish": "npm run build --workspace @cdk-construct/core && npm run build --workspace @cdk-construct/aurora && npm publish --workspace @cdk-construct/aurora --access public"
+        "prePublish": "node scripts/validate-ferrflow-package-release.mjs --package aurora --changelog packages/aurora/CHANGELOG.md",
+        "postPublish": "node scripts/sanitize-ferrflow-github-release.mjs --package aurora && npm run build --workspace @cdk-construct/core && npm run build --workspace @cdk-construct/aurora && npm publish --workspace @cdk-construct/aurora --access public"
       }
     },
     {
@@ -54,7 +56,8 @@
       ],
       "hooks": {
         "preCommit": "node scripts/sanitize-ferrflow-changelog.mjs --package api-gateway --changelog packages/api-gateway/CHANGELOG.md",
-        "postPublish": "npm run build --workspace @cdk-construct/core && npm run build --workspace @cdk-construct/api-gateway && npm publish --workspace @cdk-construct/api-gateway --access public"
+        "prePublish": "node scripts/validate-ferrflow-package-release.mjs --package api-gateway --changelog packages/api-gateway/CHANGELOG.md",
+        "postPublish": "node scripts/sanitize-ferrflow-github-release.mjs --package api-gateway && npm run build --workspace @cdk-construct/core && npm run build --workspace @cdk-construct/api-gateway && npm publish --workspace @cdk-construct/api-gateway --access public"
       }
     },
     {
@@ -69,7 +72,8 @@
       ],
       "hooks": {
         "preCommit": "node scripts/sanitize-ferrflow-changelog.mjs --package s3 --changelog packages/s3/CHANGELOG.md",
-        "postPublish": "npm run build --workspace @cdk-construct/core && npm run build --workspace @cdk-construct/s3 && npm publish --workspace @cdk-construct/s3 --access public"
+        "prePublish": "node scripts/validate-ferrflow-package-release.mjs --package s3 --changelog packages/s3/CHANGELOG.md",
+        "postPublish": "node scripts/sanitize-ferrflow-github-release.mjs --package s3 && npm run build --workspace @cdk-construct/core && npm run build --workspace @cdk-construct/s3 && npm publish --workspace @cdk-construct/s3 --access public"
       }
     },
     {
@@ -84,7 +88,8 @@
       ],
       "hooks": {
         "preCommit": "node scripts/sanitize-ferrflow-changelog.mjs --package sqs --changelog packages/sqs/CHANGELOG.md",
-        "postPublish": "npm run build --workspace @cdk-construct/core && npm run build --workspace @cdk-construct/sqs && npm publish --workspace @cdk-construct/sqs --access public"
+        "prePublish": "node scripts/validate-ferrflow-package-release.mjs --package sqs --changelog packages/sqs/CHANGELOG.md",
+        "postPublish": "node scripts/sanitize-ferrflow-github-release.mjs --package sqs && npm run build --workspace @cdk-construct/core && npm run build --workspace @cdk-construct/sqs && npm publish --workspace @cdk-construct/sqs --access public"
       }
     },
     {
@@ -99,7 +104,8 @@
       ],
       "hooks": {
         "preCommit": "node scripts/sanitize-ferrflow-changelog.mjs --package iam --changelog packages/iam/CHANGELOG.md",
-        "postPublish": "npm run build --workspace @cdk-construct/core && npm run build --workspace @cdk-construct/iam && npm publish --workspace @cdk-construct/iam --access public"
+        "prePublish": "node scripts/validate-ferrflow-package-release.mjs --package iam --changelog packages/iam/CHANGELOG.md",
+        "postPublish": "node scripts/sanitize-ferrflow-github-release.mjs --package iam && npm run build --workspace @cdk-construct/core && npm run build --workspace @cdk-construct/iam && npm publish --workspace @cdk-construct/iam --access public"
       }
     },
     {
@@ -114,7 +120,8 @@
       ],
       "hooks": {
         "preCommit": "node scripts/sanitize-ferrflow-changelog.mjs --package cloudfront --changelog packages/cloudfront/CHANGELOG.md",
-        "postPublish": "npm run build --workspace @cdk-construct/core && npm run build --workspace @cdk-construct/cloudfront && npm publish --workspace @cdk-construct/cloudfront --access public"
+        "prePublish": "node scripts/validate-ferrflow-package-release.mjs --package cloudfront --changelog packages/cloudfront/CHANGELOG.md",
+        "postPublish": "node scripts/sanitize-ferrflow-github-release.mjs --package cloudfront && npm run build --workspace @cdk-construct/core && npm run build --workspace @cdk-construct/cloudfront && npm publish --workspace @cdk-construct/cloudfront --access public"
       }
     },
     {
@@ -129,7 +136,8 @@
       ],
       "hooks": {
         "preCommit": "node scripts/sanitize-ferrflow-changelog.mjs --package waf --changelog packages/waf/CHANGELOG.md",
-        "postPublish": "npm run build --workspace @cdk-construct/core && npm run build --workspace @cdk-construct/waf && npm publish --workspace @cdk-construct/waf --access public"
+        "prePublish": "node scripts/validate-ferrflow-package-release.mjs --package waf --changelog packages/waf/CHANGELOG.md",
+        "postPublish": "node scripts/sanitize-ferrflow-github-release.mjs --package waf && npm run build --workspace @cdk-construct/core && npm run build --workspace @cdk-construct/waf && npm publish --workspace @cdk-construct/waf --access public"
       }
     },
     {
@@ -144,7 +152,8 @@
       ],
       "hooks": {
         "preCommit": "node scripts/sanitize-ferrflow-changelog.mjs --package cloudwatch --changelog packages/cloudwatch/CHANGELOG.md",
-        "postPublish": "npm run build --workspace @cdk-construct/core && npm run build --workspace @cdk-construct/cloudwatch && npm publish --workspace @cdk-construct/cloudwatch --access public"
+        "prePublish": "node scripts/validate-ferrflow-package-release.mjs --package cloudwatch --changelog packages/cloudwatch/CHANGELOG.md",
+        "postPublish": "node scripts/sanitize-ferrflow-github-release.mjs --package cloudwatch && npm run build --workspace @cdk-construct/core && npm run build --workspace @cdk-construct/cloudwatch && npm publish --workspace @cdk-construct/cloudwatch --access public"
       }
     },
     {
@@ -159,7 +168,8 @@
       ],
       "hooks": {
         "preCommit": "node scripts/sanitize-ferrflow-changelog.mjs --package opensearch --changelog packages/opensearch/CHANGELOG.md",
-        "postPublish": "npm run build --workspace @cdk-construct/core && npm run build --workspace @cdk-construct/opensearch && npm publish --workspace @cdk-construct/opensearch --access public"
+        "prePublish": "node scripts/validate-ferrflow-package-release.mjs --package opensearch --changelog packages/opensearch/CHANGELOG.md",
+        "postPublish": "node scripts/sanitize-ferrflow-github-release.mjs --package opensearch && npm run build --workspace @cdk-construct/core && npm run build --workspace @cdk-construct/opensearch && npm publish --workspace @cdk-construct/opensearch --access public"
       }
     }
   ],

@@ -99,12 +99,21 @@ const validateLoggingConfig = (props: OpenSearchDomainProps): void => {
   }
 };
 
+const validateNetworkConfig = (props: OpenSearchDomainProps, isProduction: boolean): void => {
+  if (isProduction && props.vpc === undefined && props.domainOverrides?.vpc === undefined) {
+    throw new Error(
+      'Production OpenSearch domains require VPC placement. Provide vpc in OpenSearchDomainProps.',
+    );
+  }
+};
+
 export const defaultsForEnvironment = (props: OpenSearchDomainProps): OpenSearchDomainDefaults => {
   validateEnvironmentConfig(props);
   validateLoggingConfig(props);
 
   const environment = resolveEnvironmentConfig(props);
   const isProduction = isProductionEnvironment(environment);
+  validateNetworkConfig(props, isProduction);
 
   return {
     version: OpenSearchVersion.OPENSEARCH_2_19,

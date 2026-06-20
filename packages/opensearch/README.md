@@ -13,9 +13,20 @@ npm install @cdk-construct/opensearch @cdk-construct/core
 ```ts
 import { Stack } from 'aws-cdk-lib';
 import { EnvironmentName } from '@cdk-construct/core';
+import { Vpc, SecurityGroup } from 'aws-cdk-lib/aws-ec2';
+import { AccountPrincipal, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { OpenSearchDomain } from '@cdk-construct/opensearch';
 
 const stack = new Stack();
+const vpc = Vpc.fromLookup(stack, 'Vpc', {
+  vpcName: 'shared-prod',
+});
+const securityGroup = SecurityGroup.fromSecurityGroupId(stack, 'DomainSecurityGroup', 'sg-1234');
+const domainArn = Stack.of(stack).formatArn({
+  service: 'es',
+  resource: 'domain',
+  resourceName: 'catalog-search-prod/*',
+});
 
 new OpenSearchDomain(stack, 'Search', {
   domainName: 'catalog-search-prod',
@@ -24,6 +35,20 @@ new OpenSearchDomain(stack, 'Search', {
     account: '123456789012',
     region: 'us-east-1',
   },
+  vpc,
+  securityGroups: [securityGroup],
+  accessPolicies: [
+    new PolicyStatement({
+      principals: [new AccountPrincipal('123456789012')],
+      actions: ['es:ESHttp*'],
+      resources: [domainArn],
+      conditions: {
+        IpAddress: {
+          'aws:sourceIp': ['10.0.0.0/8'],
+        },
+      },
+    }),
+  ],
 });
 ```
 
@@ -39,7 +64,7 @@ new OpenSearchDomain(stack, 'Search', {
 
 ## Production Security
 
-For production domains, pass a VPC, security group, and scoped access policy from your application. The construct keeps those inputs explicit so network placement and caller identity stay owned by the consuming app.
+Production domains require VPC placement. Build `OpenSearchDomainProps` with a VPC, security group, and scoped access policy from your application. The construct keeps those inputs explicit so network placement and caller identity stay owned by the consuming app.
 
 ## Documentation
 

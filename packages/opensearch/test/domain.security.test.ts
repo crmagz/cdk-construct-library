@@ -1,13 +1,13 @@
 import { EnvironmentName } from '@cdk-construct/core';
 import { jest } from '@jest/globals';
-import { App, Stack, Validations } from 'aws-cdk-lib';
+import { App, CfnResource, Stack, Validations } from 'aws-cdk-lib';
 import { Match, Template } from 'aws-cdk-lib/assertions';
 import { SecurityGroup, Vpc } from 'aws-cdk-lib/aws-ec2';
 import { AccountPrincipal, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { AwsSolutionsChecks } from 'cdk-nag';
-import type { IConstruct } from 'constructs';
 
 import { OpenSearchDomain } from '../src/index.js';
+import type { OpenSearchDomainProps } from '../src/index.js';
 
 const prodEnv = {
   name: EnvironmentName.PROD,
@@ -22,7 +22,12 @@ const createSecurityApp = (): App => {
   return app;
 };
 
-const secureVpcProps = (stack: Stack) => {
+type SecureVpcProps = Pick<
+  OpenSearchDomainProps,
+  'accessPolicies' | 'securityGroups' | 'suppressLogsResourcePolicy' | 'vpc'
+>;
+
+const secureVpcProps = (stack: Stack, domainName: string): SecureVpcProps => {
   const vpc = Vpc.fromVpcAttributes(stack, 'ImportedVpc', {
     vpcId: 'vpc-1234567890abcdef0',
     availabilityZones: ['us-east-1a', 'us-east-1b', 'us-east-1c'],
@@ -37,6 +42,11 @@ const secureVpcProps = (stack: Stack) => {
     'ImportedDomainSecurityGroup',
     'sg-1234567890abcdef0',
   );
+  const domainArn = Stack.of(stack).formatArn({
+    service: 'es',
+    resource: 'domain',
+    resourceName: `${domainName}/*`,
+  });
 
   return {
     vpc,
@@ -46,7 +56,7 @@ const secureVpcProps = (stack: Stack) => {
       new PolicyStatement({
         principals: [new AccountPrincipal(prodEnv.account)],
         actions: ['es:ESHttp*'],
-        resources: ['*'],
+        resources: [domainArn],
         conditions: {
           IpAddress: {
             'aws:sourceIp': ['10.0.0.0/8'],
@@ -57,36 +67,35 @@ const secureVpcProps = (stack: Stack) => {
   };
 };
 
-const findConstructByPath = (scope: IConstruct, path: string): IConstruct => {
-  const construct = scope.node.findAll().find((child) => child.node.path === path);
+const findCfnResourceByType = (stack: Stack, resourceType: string): CfnResource => {
+  const resources = stack.node
+    .findAll()
+    .filter(
+      (child): child is CfnResource =>
+        CfnResource.isCfnResource(child) && child.cfnResourceType === resourceType,
+    );
 
-  if (construct === undefined) {
-    throw new Error(`Expected to find construct at path ${path}.`);
+  if (resources.length !== 1) {
+    throw new Error(`Expected one ${resourceType} resource, found ${resources.length}.`);
   }
 
-  return construct;
+  return resources[0];
 };
 
-const acknowledgeNagRule = (construct: IConstruct, id: string, reason: string): void => {
-  construct.node.addMetadata(Validations.ACKNOWLEDGED_RULES_METADATA_KEY, {
+const acknowledgeNagRule = (resource: CfnResource, id: string, reason: string): void => {
+  resource.node.addMetadata(Validations.ACKNOWLEDGED_RULES_METADATA_KEY, {
     [id]: reason,
   });
 };
 
 const acknowledgeOpenSearchAccessPolicyCustomResource = (stack: Stack): void => {
   acknowledgeNagRule(
-    findConstructByPath(
-      stack,
-      'OpenSearchDomainSecurityStack/AWS679f53fac002430cb0da5b7982bd2287/ServiceRole/Resource',
-    ),
+    findCfnResourceByType(stack, 'AWS::IAM::Role'),
     'AwsSolutions-IAM4[Policy::arn:<AWS::Partition>:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole]',
     'The CDK OpenSearch L2 creates a singleton custom-resource Lambda for domain access policy updates.',
   );
   acknowledgeNagRule(
-    findConstructByPath(
-      stack,
-      'OpenSearchDomainSecurityStack/AWS679f53fac002430cb0da5b7982bd2287/Resource',
-    ),
+    findCfnResourceByType(stack, 'AWS::Lambda::Function'),
     'AwsSolutions-L1',
     'The flagged Lambda is the CDK OpenSearch L2 singleton custom resource, not code owned by this construct.',
   );
@@ -103,7 +112,7 @@ describe('OpenSearchDomain security', () => {
       new OpenSearchDomain(stack, 'Search', {
         env: prodEnv,
         domainName: 'security-search-prod',
-        ...secureVpcProps(stack),
+        ...secureVpcProps(stack, 'security-search-prod'),
       });
       acknowledgeOpenSearchAccessPolicyCustomResource(stack);
 
@@ -120,6 +129,7 @@ describe('OpenSearchDomain security', () => {
     new OpenSearchDomain(stack, 'Search', {
       env: prodEnv,
       domainName: 'security-search-prod',
+      ...secureVpcProps(stack, 'security-search-prod'),
     });
 
     const template = Template.fromStack(stack);
@@ -161,6 +171,7 @@ describe('OpenSearchDomain security', () => {
       new OpenSearchDomain(stack, 'Search', {
         env: prodEnv,
         domainName: 'insecure-search-prod',
+        ...secureVpcProps(stack, 'insecure-search-prod'),
         domainOverrides: {
           enforceHttps: false,
           encryptionAtRest: {
@@ -179,8 +190,6 @@ describe('OpenSearchDomain security', () => {
 
       const validationOutput = consoleErrorSpy.mock.calls.flat().join('\n');
       expect(validationOutput).toContain('AwsSolutions-OS2');
-      expect(validationOutput).toContain('AwsSolutions-OS3');
-      expect(validationOutput).toContain('AwsSolutions-OS5');
       expect(validationOutput).toContain('AwsSolutions-OS8');
       expect(validationOutput).toContain('AwsSolutions-OS9');
       expect(validationOutput).toContain('Status: failure');

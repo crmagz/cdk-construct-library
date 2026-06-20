@@ -1,7 +1,7 @@
 import { EnvironmentName } from '@cdk-construct/core';
 import { RemovalPolicy, Stack } from 'aws-cdk-lib';
 import { Match, Template } from 'aws-cdk-lib/assertions';
-import { EbsDeviceVolumeType } from 'aws-cdk-lib/aws-ec2';
+import { EbsDeviceVolumeType, Vpc } from 'aws-cdk-lib/aws-ec2';
 import { RetentionDays } from 'aws-cdk-lib/aws-logs';
 import { Domain, EngineVersion } from 'aws-cdk-lib/aws-opensearchservice';
 
@@ -27,10 +27,26 @@ const devEnv = {
   region: 'us-east-1',
 };
 
-const defaultProps = (props: Partial<OpenSearchDomainProps> = {}): OpenSearchDomainProps => {
+const importedVpc = (stack: Stack) => {
+  return Vpc.fromVpcAttributes(stack, 'ImportedVpc', {
+    vpcId: 'vpc-1234567890abcdef0',
+    availabilityZones: ['us-east-1a', 'us-east-1b', 'us-east-1c'],
+    privateSubnetIds: [
+      'subnet-11111111111111111',
+      'subnet-22222222222222222',
+      'subnet-33333333333333333',
+    ],
+  });
+};
+
+const defaultProps = (
+  stack: Stack,
+  props: Partial<OpenSearchDomainProps> = {},
+): OpenSearchDomainProps => {
   return {
     env: prodEnv,
     domainName: 'search-prod',
+    vpc: importedVpc(stack),
     ...props,
   };
 };
@@ -42,7 +58,7 @@ const synthesizeDomain = (domain: OpenSearchDomain): Template => {
 describe('OpenSearchDomain', () => {
   it('creates a production domain with secure multi-AZ defaults', () => {
     const stack = new Stack();
-    const domain = new OpenSearchDomain(stack, 'Search', defaultProps());
+    const domain = new OpenSearchDomain(stack, 'Search', defaultProps(stack));
 
     const template = synthesizeDomain(domain);
     template.resourceCountIs('AWS::OpenSearchService::Domain', 1);
@@ -50,6 +66,13 @@ describe('OpenSearchDomain', () => {
     template.hasResourceProperties('AWS::OpenSearchService::Domain', {
       DomainName: 'search-prod',
       EngineVersion: 'OpenSearch_2.19',
+      VPCOptions: Match.objectLike({
+        SubnetIds: [
+          'subnet-11111111111111111',
+          'subnet-22222222222222222',
+          'subnet-33333333333333333',
+        ],
+      }),
       ClusterConfig: Match.objectLike({
         DedicatedMasterEnabled: true,
         DedicatedMasterCount: 3,
@@ -105,7 +128,7 @@ describe('OpenSearchDomain', () => {
     const domain = new OpenSearchDomain(
       stack,
       'Search',
-      defaultProps({
+      defaultProps(stack, {
         env: devEnv,
         domainName: 'search-dev',
       }),
@@ -135,7 +158,7 @@ describe('OpenSearchDomain', () => {
     const domain = new OpenSearchDomain(
       stack,
       'Search',
-      defaultProps({
+      defaultProps(stack, {
         domainName: 'search-configured',
         version: OpenSearchVersion.OPENSEARCH_3_1,
         capacity: {
@@ -199,7 +222,7 @@ describe('OpenSearchDomain', () => {
     const domain = new OpenSearchDomain(
       stack,
       'Search',
-      defaultProps({
+      defaultProps(stack, {
         logging: {
           auditLogEnabled: true,
         },
@@ -225,7 +248,7 @@ describe('OpenSearchDomain', () => {
     const domain = new OpenSearchDomain(
       stack,
       'Search',
-      defaultProps({
+      defaultProps(stack, {
         domainName: 'search-override',
         domainOverrides: {
           enforceHttps: false,
@@ -264,7 +287,7 @@ describe('OpenSearchDomain', () => {
       new OpenSearchDomain(
         stack,
         'Search',
-        defaultProps({
+        defaultProps(stack, {
           logging: {
             auditLogEnabled: true,
           },
@@ -272,12 +295,23 @@ describe('OpenSearchDomain', () => {
       );
     }).toThrow('OpenSearch audit logging requires fineGrainedAccessControl');
   });
+
+  it('throws when production VPC placement is omitted', () => {
+    const stack = new Stack();
+
+    expect(() => {
+      new OpenSearchDomain(stack, 'Search', {
+        env: prodEnv,
+        domainName: 'search-public-prod',
+      });
+    }).toThrow('Production OpenSearch domains require VPC placement');
+  });
 });
 
 describe('createOpenSearchDomain', () => {
   it('returns the domain resources', () => {
     const stack = new Stack();
-    const resources = createOpenSearchDomain(stack, 'Search', defaultProps());
+    const resources = createOpenSearchDomain(stack, 'Search', defaultProps(stack));
 
     expect(resources.domain).toBeInstanceOf(Domain);
     expect(resources.appLogGroup).toBeDefined();
@@ -290,7 +324,7 @@ describe('createOpenSearchDomain', () => {
 describe('resource creators', () => {
   it('creates resources from typed resource props', () => {
     const stack = new Stack();
-    const props = defaultProps({ domainName: 'search-resource' });
+    const props = defaultProps(stack, { domainName: 'search-resource' });
     const defaults = defaultsForEnvironment(props);
     const logGroups = createLogGroupResources({
       scope: stack,

@@ -10,7 +10,12 @@ The construct requires `env` so production and non-production behavior is explic
 import { EnvironmentName } from '@cdk-construct/core';
 import type { OpenSearchDomainProps } from '@cdk-construct/opensearch';
 
-export const environments: readonly OpenSearchDomainProps[] = [
+export type EnvironmentSearchConfig = Omit<
+  OpenSearchDomainProps,
+  'accessPolicies' | 'securityGroups' | 'vpc'
+>;
+
+export const environments: readonly EnvironmentSearchConfig[] = [
   {
     env: {
       name: EnvironmentName.DEV,
@@ -54,6 +59,8 @@ Keep app code small by building environment-specific props elsewhere, then passi
 
 ```ts
 import { App, Stack } from 'aws-cdk-lib';
+import { Vpc, SecurityGroup } from 'aws-cdk-lib/aws-ec2';
+import { AccountPrincipal, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { OpenSearchDomain } from '@cdk-construct/opensearch';
 import { environments } from './environments.js';
 
@@ -66,8 +73,33 @@ environments.forEach((props) => {
       region: props.env.region,
     },
   });
+  const vpc = Vpc.fromLookup(stack, 'Vpc', {
+    vpcName: `shared-${props.env.name}`,
+  });
+  const securityGroup = SecurityGroup.fromSecurityGroupId(stack, 'DomainSecurityGroup', 'sg-1234');
+  const domainArn = Stack.of(stack).formatArn({
+    service: 'es',
+    resource: 'domain',
+    resourceName: `${props.domainName}/*`,
+  });
 
-  new OpenSearchDomain(stack, 'Search', props);
+  new OpenSearchDomain(stack, 'Search', {
+    ...props,
+    vpc,
+    securityGroups: [securityGroup],
+    accessPolicies: [
+      new PolicyStatement({
+        principals: [new AccountPrincipal(props.env.account ?? Stack.of(stack).account)],
+        actions: ['es:ESHttp*'],
+        resources: [domainArn],
+        conditions: {
+          IpAddress: {
+            'aws:sourceIp': ['10.0.0.0/8'],
+          },
+        },
+      }),
+    ],
+  });
 });
 ```
 

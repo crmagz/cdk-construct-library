@@ -1589,7 +1589,7 @@ project.addTask('release:check', {
 
 project.addTask('release:preview', {
   description: 'Preview package-scoped releases for the current branch',
-  exec: 'node scripts/preview-package-releases.mjs',
+  exec: `node scripts/preview-package-releases.mjs --ferrflow-version ${ferrFlowVersion}`,
 });
 
 project.addTask('deploy', {
@@ -1657,7 +1657,10 @@ project.package.setScript('clean', 'projen clean');
 project.package.setScript('deploy', 'projen deploy');
 project.package.setScript('security', 'projen security');
 project.package.setScript('release:check', 'projen release:check');
-project.package.setScript('release:preview', 'node scripts/preview-package-releases.mjs');
+project.package.setScript(
+  'release:preview',
+  `node scripts/preview-package-releases.mjs --ferrflow-version ${ferrFlowVersion}`,
+);
 project.package.setScript('hooks:install', 'lefthook install');
 project.package.setScript('hooks:run', 'lefthook run pre-commit && lefthook run pre-push');
 project.package.setScript('prepare', 'lefthook install');
@@ -1708,6 +1711,7 @@ project.github?.tryFindWorkflow('build')?.file?.patch(
     if: "${{ github.event_name == 'pull_request' }}",
     run: [
       'git fetch https://github.com/${{ github.repository }}.git ${{ github.event.pull_request.base.ref }} --depth=1',
+      'git fetch --force --tags origin',
       'npm run release:check -- --base FETCH_HEAD',
     ].join('\n'),
   }),

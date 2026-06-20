@@ -11,6 +11,7 @@ const typeHeadings = {
   perf: 'Performance',
   refactor: 'Refactoring',
 };
+const defaultFerrFlowVersion = '5.2.4';
 const conventionalSubjectPattern =
   /^(?<type>[a-z]+)(?<typeBreaking>!)?(?:\((?<scope>[^)]+)\))?(?<scopeBreaking>!)?: (?<description>.+)$/;
 
@@ -32,6 +33,17 @@ const parseArgs = (args) => {
     if (arg === '--head') {
       options.head = args[index + 1];
       index += 1;
+      continue;
+    }
+
+    if (arg === '--ferrflow-version') {
+      options.ferrFlowVersion = args[index + 1];
+      index += 1;
+      continue;
+    }
+
+    if (arg === '--skip-ferrflow-plan') {
+      options.skipFerrFlowPlan = true;
       continue;
     }
   }
@@ -181,6 +193,103 @@ export const releasePreviewsFromCommits = ({ commits, packageNames, packageVersi
   }));
 };
 
+const ferrFlowCommitSubject = (commit) => {
+  if (typeof commit === 'string') {
+    return commit;
+  }
+
+  return commit.subject ?? commit.message ?? commit.summary ?? commit.header;
+};
+
+const ferrFlowCommitHash = (commit) => {
+  if (typeof commit === 'string') {
+    return undefined;
+  }
+
+  return commit.hash ?? commit.sha ?? commit.id;
+};
+
+export const validateFerrFlowPackageScopedPlan = ({ packages, packageNames }) => {
+  const packageNameSet = new Set(packageNames);
+  const errors = [];
+
+  for (const releasePackage of packages) {
+    const packageName =
+      releasePackage.name ?? releasePackage.packageName ?? releasePackage.package?.name;
+
+    if (!packageNameSet.has(packageName)) {
+      continue;
+    }
+
+    for (const commit of releasePackage.commits ?? []) {
+      const subject = ferrFlowCommitSubject(commit);
+
+      if (subject === undefined) {
+        continue;
+      }
+
+      const parsed = parseConventionalSubject(subject);
+      const isBreaking = parsed?.breaking === true;
+      const isReleasable = parsed !== undefined && releasableTypes.has(parsed.type);
+
+      if (!isReleasable && !isBreaking) {
+        continue;
+      }
+
+      const hash = ferrFlowCommitHash(commit);
+      const prefix = hash === undefined ? subject : `${hash.slice(0, 7)} "${subject}"`;
+
+      if (parsed === undefined || parsed.scope === undefined) {
+        errors.push(
+          `${packageName} release includes ${prefix}, but releasable release notes must use a package scope.`,
+        );
+        continue;
+      }
+
+      if (parsed.scope !== packageName) {
+        errors.push(
+          `${packageName} release includes out-of-scope commit ${prefix}; expected scope "${packageName}", got "${parsed.scope}".`,
+        );
+      }
+    }
+  }
+
+  return errors;
+};
+
+const ferrFlowPlanFromCheck = ({ ferrFlowVersion = defaultFerrFlowVersion } = {}) => {
+  const output = execFileSync(
+    'npx',
+    [
+      '-p',
+      `@ferrlabs/ferrflow@${ferrFlowVersion}`,
+      'ferrflow',
+      'check',
+      '--config',
+      'ferrflow.json',
+      '--json',
+    ],
+    {
+      cwd: root,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    },
+  ).trim();
+
+  return output.length === 0 ? { packages: [] } : JSON.parse(output);
+};
+
+export const validateCurrentFerrFlowPlan = ({ ferrFlowVersion } = {}) => {
+  const ferrflowConfig = readJson('ferrflow.json');
+  const packageNames = packageNamesFromFerrflow(ferrflowConfig);
+  const plan = ferrFlowPlanFromCheck({ ferrFlowVersion });
+
+  return validateFerrFlowPackageScopedPlan({
+    packages: plan.packages ?? [],
+    packageNames,
+  });
+};
+
 export const renderReleasePreviews = (previews) => {
   if (previews.length === 0) {
     return 'No package releases would be created from this change.\n';
@@ -246,6 +355,25 @@ const main = () => {
   const previews = previewCurrentBranch(options);
 
   console.log(renderReleasePreviews(previews));
+
+  if (options.skipFerrFlowPlan === true) {
+    return;
+  }
+
+  const errors = validateCurrentFerrFlowPlan({
+    ferrFlowVersion: options.ferrFlowVersion,
+  });
+
+  if (errors.length === 0) {
+    console.log('FerrFlow release plan is package-scoped.');
+    return;
+  }
+
+  console.error('FerrFlow release plan contains out-of-scope package release notes.');
+  for (const error of errors) {
+    console.error(`- ${error}`);
+  }
+  process.exitCode = 1;
 };
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

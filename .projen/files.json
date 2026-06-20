@@ -25,6 +25,7 @@
     "packages/cloudfront/tsconfig.json",
     "packages/cloudwatch/tsconfig.json",
     "packages/core/tsconfig.json",
+    "packages/elasticache/tsconfig.json",
     "packages/iam/tsconfig.json",
     "packages/opensearch/tsconfig.json",
     "packages/s3/tsconfig.json",

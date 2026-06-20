@@ -33,6 +33,7 @@ jobs:
         if: ${{ github.event_name == 'pull_request' }}
         run: |-
           git fetch https://github.com/${{ github.repository }}.git ${{ github.event.pull_request.base.ref }} --depth=1
+          git fetch --force --tags origin
           npm run release:check -- --base FETCH_HEAD
       - name: release:preview
         if: ${{ github.event_name == 'pull_request' }}

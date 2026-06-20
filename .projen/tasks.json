@@ -183,7 +183,7 @@
       "description": "Preview package-scoped releases for the current branch",
       "steps": [
         {
-          "exec": "node scripts/preview-package-releases.mjs"
+          "exec": "node scripts/preview-package-releases.mjs --ferrflow-version 5.2.4"
         }
       ]
     },

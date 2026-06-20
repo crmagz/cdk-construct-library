@@ -5,6 +5,7 @@ import {
   bumpVersion,
   releasePreviewsFromCommits,
   renderReleasePreviews,
+  validateFerrFlowPackageScopedPlan,
 } from '../scripts/preview-package-releases.mjs';
 
 test('bumps versions by semantic impact', () => {
@@ -92,4 +93,53 @@ test('renders a package-scoped release preview', () => {
   assert.match(preview, /0\.1\.0 -> 0\.2\.0 \(minor\)/);
   assert.match(preview, /feat\(elasticache\): add replication group construct/);
   assert.doesNotMatch(preview, /opensearch/);
+});
+
+test('validates ferrflow release plan commits stay scoped to the package', () => {
+  const errors = validateFerrFlowPackageScopedPlan({
+    packageNames: ['api-gateway', 'cloudwatch', 'opensearch'],
+    packages: [
+      {
+        name: 'opensearch',
+        commits: [
+          {
+            hash: 'aaa1111',
+            subject: 'feat(opensearch): add domain construct',
+          },
+          {
+            hash: 'bbb2222',
+            subject: 'fix(api-gateway): use lambda proxy route',
+          },
+          {
+            hash: 'ccc3333',
+            subject: 'chore(repo): update generated files',
+          },
+        ],
+      },
+    ],
+  });
+
+  assert.equal(errors.length, 1);
+  assert.match(errors[0], /opensearch release includes out-of-scope commit/);
+  assert.match(errors[0], /expected scope "opensearch", got "api-gateway"/);
+});
+
+test('rejects unscoped releasable commits in ferrflow release plans', () => {
+  const errors = validateFerrFlowPackageScopedPlan({
+    packageNames: ['opensearch'],
+    packages: [
+      {
+        name: 'opensearch',
+        commits: [
+          {
+            hash: 'aaa1111',
+            subject: 'feat: add domain construct',
+          },
+        ],
+      },
+    ],
+  });
+
+  assert.equal(errors.length, 1);
+  assert.match(errors[0], /must use a package scope/);
 });

@@ -34,6 +34,9 @@ jobs:
         run: |-
           git fetch https://github.com/${{ github.repository }}.git ${{ github.event.pull_request.base.ref }} --depth=1
           npm run release:check -- --base FETCH_HEAD
+      - name: release:preview
+        if: ${{ github.event_name == 'pull_request' }}
+        run: npm run release:preview -- --base FETCH_HEAD
       - name: format:check
         run: npm run format:check
       - name: lint

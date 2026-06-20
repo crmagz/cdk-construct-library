@@ -178,6 +178,15 @@
         }
       ]
     },
+    "release:preview": {
+      "name": "release:preview",
+      "description": "Preview package-scoped releases for the current branch",
+      "steps": [
+        {
+          "exec": "node scripts/preview-package-releases.mjs"
+        }
+      ]
+    },
     "security": {
       "name": "security",
       "description": "Run CDK security policy validation tests",

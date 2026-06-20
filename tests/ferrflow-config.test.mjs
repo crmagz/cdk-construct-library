@@ -59,7 +59,7 @@ test('ferrflow release config covers every workspace package', async () => {
     );
     assert.equal(
       config.hooks.postPublish,
-      `node scripts/sanitize-ferrflow-github-release.mjs --package ${service} && ${packageBuild} && npm publish --workspace @cdk-construct/${service} --access public`,
+      `${packageBuild} && npm publish --workspace @cdk-construct/${service} --access public`,
     );
   }
 });

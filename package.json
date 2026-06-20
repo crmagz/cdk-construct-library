@@ -20,6 +20,7 @@
     "post-compile": "projen post-compile",
     "pre-compile": "projen pre-compile",
     "release:check": "projen release:check",
+    "release:preview": "node scripts/preview-package-releases.mjs",
     "security": "projen security",
     "test": "projen test",
     "test:watch": "projen test:watch",

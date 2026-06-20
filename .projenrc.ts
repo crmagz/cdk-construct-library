@@ -1100,7 +1100,7 @@ new JsonFile(project, 'packages/opensearch/package.json', {
         import: './lib/index.js',
       },
     },
-    files: ['lib', 'README.md'],
+    files: ['lib', 'README.md', 'docs'],
     sideEffects: false,
     publishConfig: {
       access: 'public',
@@ -1109,6 +1109,9 @@ new JsonFile(project, 'packages/opensearch/package.json', {
       build: 'tsc -p tsconfig.json',
       clean: 'rm -rf lib tsconfig.tsbuildinfo',
       package: 'npm pack --pack-destination ../../dist/js',
+    },
+    dependencies: {
+      [corePackageName]: `^${packageVersion('packages/core/package.json')}`,
     },
     peerDependencies: {
       'aws-cdk-lib': awsCdkLibPeerVersion,

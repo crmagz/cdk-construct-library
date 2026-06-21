@@ -1713,15 +1713,15 @@ project.github?.tryFindWorkflow('build')?.file?.patch(
     name: 'release:check',
     if: "${{ github.event_name == 'pull_request' }}",
     run: [
-      'git fetch https://github.com/${{ github.repository }}.git ${{ github.event.pull_request.base.ref }} --depth=1',
+      'git fetch https://github.com/${{ github.repository }}.git ${{ github.event.pull_request.base.ref }}:refs/remotes/pr-base/base --depth=1',
       'git fetch --force --tags origin',
-      'npm run release:check -- --base FETCH_HEAD',
+      'npm run release:check -- --base refs/remotes/pr-base/base',
     ].join('\n'),
   }),
   JsonPatch.add('/jobs/build/steps/5', {
     name: 'release:preview',
     if: "${{ github.event_name == 'pull_request' }}",
-    run: 'npm run release:preview -- --base FETCH_HEAD',
+    run: 'npm run release:preview -- --base refs/remotes/pr-base/base',
   }),
   JsonPatch.add('/jobs/build/steps/6', {
     name: 'format:check',

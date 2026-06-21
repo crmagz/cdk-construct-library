@@ -55,7 +55,7 @@ test('ferrflow release config covers every workspace package', async () => {
     );
     assert.equal(
       config.hooks.prePublish,
-      `node scripts/validate-ferrflow-package-release.mjs --package ${service} --changelog packages/${service}/CHANGELOG.md`,
+      `node scripts/validate-ferrflow-release-tag.mjs --package ${service} && node scripts/validate-ferrflow-package-release.mjs --package ${service} --changelog packages/${service}/CHANGELOG.md`,
     );
     assert.equal(
       config.hooks.postPublish,

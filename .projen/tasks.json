@@ -178,6 +178,15 @@
         }
       ]
     },
+    "release:preview": {
+      "name": "release:preview",
+      "description": "Preview package-scoped releases for the current branch",
+      "steps": [
+        {
+          "exec": "node scripts/preview-package-releases.mjs --ferrflow-version 5.2.4"
+        }
+      ]
+    },
     "security": {
       "name": "security",
       "description": "Run CDK security policy validation tests",

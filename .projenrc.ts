@@ -52,16 +52,13 @@ const packageVersion = (packageJsonPath: string, fallback = '0.0.0'): string => 
   }
 };
 
-const sanitizeGithubReleaseCommand = (service: string): string =>
-  `node scripts/sanitize-ferrflow-github-release.mjs --package ${service}`;
-
-const releasePostPublishCommand = (service: string, packageName: string): string => {
+const releasePostPublishCommand = (packageName: string): string => {
   const buildCommand =
     packageName === corePackageName
       ? `npm run build --workspace ${packageName}`
       : `npm run build --workspace ${corePackageName} && npm run build --workspace ${packageName}`;
 
-  return `${sanitizeGithubReleaseCommand(service)} && ${buildCommand} && npm publish --workspace ${packageName} --access public`;
+  return `${buildCommand} && npm publish --workspace ${packageName} --access public`;
 };
 
 const sanitizeReleaseChangelogCommand = (service: string, packagePath: string): string =>
@@ -379,7 +376,7 @@ new JsonFile(project, 'packages/aurora/package.json', {
         import: './lib/index.js',
       },
     },
-    files: ['lib', 'README.md'],
+    files: ['lib', 'README.md', 'docs'],
     sideEffects: false,
     publishConfig: {
       access: 'public',
@@ -388,6 +385,9 @@ new JsonFile(project, 'packages/aurora/package.json', {
       build: 'tsc -p tsconfig.json',
       clean: 'rm -rf lib tsconfig.tsbuildinfo',
       package: 'npm pack --pack-destination ../../dist/js',
+    },
+    dependencies: {
+      [corePackageName]: `^${packageVersion('packages/core/package.json')}`,
     },
     peerDependencies: {
       'aws-cdk-lib': awsCdkLibPeerVersion,
@@ -1298,10 +1298,7 @@ new JsonFile(project, 'ferrflow.json', {
       hooks: {
         preCommit: sanitizeReleaseChangelogCommand(workspacePackage.service, workspacePackage.path),
         prePublish: validatePackageReleaseCommand(workspacePackage.service, workspacePackage.path),
-        postPublish: releasePostPublishCommand(
-          workspacePackage.service,
-          workspacePackage.packageName,
-        ),
+        postPublish: releasePostPublishCommand(workspacePackage.packageName),
       },
     })),
   },
@@ -1352,6 +1349,11 @@ new TextFile(project, '.github/workflows/release.yml', {
     '    branches:',
     '      - main',
     '  workflow_dispatch:',
+    '    inputs:',
+    '      publish_package:',
+    '        description: Optional workspace package name to publish without creating a new release, for example elasticache.',
+    '        required: false',
+    '        type: string',
     '',
     'concurrency:',
     '  group: ${{ github.workflow }}',
@@ -1387,15 +1389,34 @@ new TextFile(project, '.github/workflows/release.yml', {
     '      - name: Fetch release tags',
     '        run: git fetch --force --tags origin',
     '      - name: Release packages',
+    "        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.publish_package != '') }}",
     `        uses: FerrLabs/FerrFlow@v${ferrFlowVersion}`,
     '        with:',
     `          version: ${ferrFlowVersion}`,
     '          mode: release',
     '        env:',
     '          GITHUB_TOKEN: ${{ secrets.TOKEN }}',
+    '          GH_TOKEN: ${{ secrets.TOKEN }}',
     '          DO_NOT_TRACK: "1"',
     '          NPM_CONFIG_ACCESS: public',
     '          NPM_CONFIG_PROVENANCE: "true"',
+    '      - name: Redrive package publish',
+    "        if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_package != '' }}",
+    '        run: |-',
+    '          workspace="@cdk-construct/${{ inputs.publish_package }}"',
+    '          npm run build --workspace @cdk-construct/core',
+    '          if [ "$workspace" != "@cdk-construct/core" ]; then',
+    '            npm run build --workspace "$workspace"',
+    '          fi',
+    '          npm publish --workspace "$workspace" --access public',
+    '        env:',
+    '          NPM_CONFIG_ACCESS: public',
+    '          NPM_CONFIG_PROVENANCE: "true"',
+    '      - name: Sanitize package GitHub releases',
+    '        if: always()',
+    '        run: node scripts/sanitize-package-github-releases.mjs',
+    '        env:',
+    '          GITHUB_TOKEN: ${{ secrets.TOKEN }}',
     '',
   ],
 });
@@ -1566,6 +1587,11 @@ project.addTask('release:check', {
   exec: 'node scripts/validate-release-scopes.mjs',
 });
 
+project.addTask('release:preview', {
+  description: 'Preview package-scoped releases for the current branch',
+  exec: `node scripts/preview-package-releases.mjs --ferrflow-version ${ferrFlowVersion}`,
+});
+
 project.addTask('deploy', {
   description: 'Publish releasable workspace packages with FerrFlow',
   exec: 'ferrflow release',
@@ -1631,6 +1657,10 @@ project.package.setScript('clean', 'projen clean');
 project.package.setScript('deploy', 'projen deploy');
 project.package.setScript('security', 'projen security');
 project.package.setScript('release:check', 'projen release:check');
+project.package.setScript(
+  'release:preview',
+  `node scripts/preview-package-releases.mjs --ferrflow-version ${ferrFlowVersion}`,
+);
 project.package.setScript('hooks:install', 'lefthook install');
 project.package.setScript('hooks:run', 'lefthook run pre-commit && lefthook run pre-push');
 project.package.setScript('prepare', 'lefthook install');
@@ -1680,31 +1710,37 @@ project.github?.tryFindWorkflow('build')?.file?.patch(
     name: 'release:check',
     if: "${{ github.event_name == 'pull_request' }}",
     run: [
-      'git fetch https://github.com/${{ github.repository }}.git ${{ github.event.pull_request.base.ref }} --depth=1',
-      'npm run release:check -- --base FETCH_HEAD',
+      'git fetch https://github.com/${{ github.repository }}.git ${{ github.event.pull_request.base.ref }}:refs/remotes/origin/${{ github.event.pull_request.base.ref }}',
+      'git fetch --force --tags origin',
+      'npm run release:check -- --base origin/${{ github.event.pull_request.base.ref }}',
     ].join('\n'),
   }),
   JsonPatch.add('/jobs/build/steps/5', {
+    name: 'release:preview',
+    if: "${{ github.event_name == 'pull_request' }}",
+    run: 'npm run release:preview -- --base origin/${{ github.event.pull_request.base.ref }}',
+  }),
+  JsonPatch.add('/jobs/build/steps/6', {
     name: 'format:check',
     run: 'npm run format:check',
   }),
-  JsonPatch.add('/jobs/build/steps/6', {
+  JsonPatch.add('/jobs/build/steps/7', {
     name: 'lint',
     run: 'npm run lint',
   }),
-  JsonPatch.add('/jobs/build/steps/7', {
+  JsonPatch.add('/jobs/build/steps/8', {
     name: 'security',
     run: 'npm run security',
   }),
-  JsonPatch.add('/jobs/build/steps/8', {
+  JsonPatch.add('/jobs/build/steps/9', {
     name: 'test',
     run: 'npm test',
   }),
-  JsonPatch.add('/jobs/build/steps/9', {
+  JsonPatch.add('/jobs/build/steps/10', {
     name: 'compile',
     run: 'npm run compile',
   }),
-  JsonPatch.add('/jobs/build/steps/10', {
+  JsonPatch.add('/jobs/build/steps/11', {
     name: 'package',
     run: 'npm run package',
   }),

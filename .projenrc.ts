@@ -69,7 +69,10 @@ const sanitizeReleaseChangelogCommand = (service: string, packagePath: string): 
   `node scripts/sanitize-ferrflow-changelog.mjs --package ${service} --changelog ${packagePath}/CHANGELOG.md`;
 
 const validatePackageReleaseCommand = (service: string, packagePath: string): string =>
-  `node scripts/validate-ferrflow-package-release.mjs --package ${service} --changelog ${packagePath}/CHANGELOG.md`;
+  [
+    `node scripts/validate-ferrflow-release-tag.mjs --package ${service}`,
+    `node scripts/validate-ferrflow-package-release.mjs --package ${service} --changelog ${packagePath}/CHANGELOG.md`,
+  ].join(' && ');
 
 const workspacePackages = [
   {
@@ -1489,6 +1492,8 @@ new TextFile(project, '.github/workflows/release.yml', {
     '        run: npm ci',
     '      - name: Fetch release tags',
     '        run: git fetch --force --tags origin',
+    '      - name: Snapshot existing release tags',
+    '        run: git tag --list > /tmp/existing-release-tags.txt',
     '      - name: Release packages',
     "        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.publish_package != '') }}",
     `        uses: FerrLabs/FerrFlow@v${ferrFlowVersion}`,
@@ -1501,6 +1506,7 @@ new TextFile(project, '.github/workflows/release.yml', {
     '          DO_NOT_TRACK: "1"',
     '          NPM_CONFIG_ACCESS: public',
     '          NPM_CONFIG_PROVENANCE: "true"',
+    '          EXISTING_RELEASE_TAGS_FILE: /tmp/existing-release-tags.txt',
     '      - name: Redrive package publish',
     "        if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_package != '' }}",
     '        run: |-',

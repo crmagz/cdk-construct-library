@@ -26,6 +26,8 @@
 /LICENSE linguist-generated
 /package-lock.json linguist-generated
 /package.json linguist-generated
+/packages/api-gateway/package.json linguist-generated
+/packages/api-gateway/tsconfig.json linguist-generated
 /packages/aurora/package.json linguist-generated
 /packages/aurora/tsconfig.json linguist-generated
 /packages/cloudfront/package.json linguist-generated
@@ -34,8 +36,12 @@
 /packages/cloudwatch/tsconfig.json linguist-generated
 /packages/core/package.json linguist-generated
 /packages/core/tsconfig.json linguist-generated
+/packages/elasticache/package.json linguist-generated
+/packages/elasticache/tsconfig.json linguist-generated
 /packages/iam/package.json linguist-generated
 /packages/iam/tsconfig.json linguist-generated
+/packages/opensearch/package.json linguist-generated
+/packages/opensearch/tsconfig.json linguist-generated
 /packages/s3/package.json linguist-generated
 /packages/s3/tsconfig.json linguist-generated
 /packages/sqs/package.json linguist-generated

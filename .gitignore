@@ -48,6 +48,8 @@ junit.xml
 !/packages/core/tsconfig.json
 !/packages/aurora/package.json
 !/packages/aurora/tsconfig.json
+!/packages/api-gateway/package.json
+!/packages/api-gateway/tsconfig.json
 !/packages/s3/package.json
 !/packages/s3/tsconfig.json
 !/packages/sqs/package.json
@@ -60,6 +62,10 @@ junit.xml
 !/packages/waf/tsconfig.json
 !/packages/cloudwatch/package.json
 !/packages/cloudwatch/tsconfig.json
+!/packages/elasticache/package.json
+!/packages/elasticache/tsconfig.json
+!/packages/opensearch/package.json
+!/packages/opensearch/tsconfig.json
 !/ferrflow.json
 !/.github/release.yml
 !/.github/workflows/release.yml

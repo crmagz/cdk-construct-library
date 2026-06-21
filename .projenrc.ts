@@ -4,12 +4,15 @@ import { JsonFile, JsonPatch, TextFile, javascript, typescript } from 'projen';
 
 const corePackageName = '@cdk-construct/core';
 const auroraPackageName = '@cdk-construct/aurora';
+const apiGatewayPackageName = '@cdk-construct/api-gateway';
 const s3PackageName = '@cdk-construct/s3';
 const sqsPackageName = '@cdk-construct/sqs';
 const iamPackageName = '@cdk-construct/iam';
 const cloudfrontPackageName = '@cdk-construct/cloudfront';
 const wafPackageName = '@cdk-construct/waf';
 const cloudwatchPackageName = '@cdk-construct/cloudwatch';
+const elasticachePackageName = '@cdk-construct/elasticache';
+const opensearchPackageName = '@cdk-construct/opensearch';
 const repositoryUrl = 'git+https://github.com/crmagz/cdk-construct-library.git';
 const nodeVersion = '24.16.0';
 const npmVersion = '11.16.0';
@@ -49,14 +52,23 @@ const packageVersion = (packageJsonPath: string, fallback = '0.0.0'): string => 
   }
 };
 
-const releasePostPublishCommand = (packageName: string): string => {
+const sanitizeGithubReleaseCommand = (service: string): string =>
+  `node scripts/sanitize-ferrflow-github-release.mjs --package ${service}`;
+
+const releasePostPublishCommand = (service: string, packageName: string): string => {
   const buildCommand =
     packageName === corePackageName
       ? `npm run build --workspace ${packageName}`
       : `npm run build --workspace ${corePackageName} && npm run build --workspace ${packageName}`;
 
-  return `${buildCommand} && npm publish --workspace ${packageName} --access public`;
+  return `${sanitizeGithubReleaseCommand(service)} && ${buildCommand} && npm publish --workspace ${packageName} --access public`;
 };
+
+const sanitizeReleaseChangelogCommand = (service: string, packagePath: string): string =>
+  `node scripts/sanitize-ferrflow-changelog.mjs --package ${service} --changelog ${packagePath}/CHANGELOG.md`;
+
+const validatePackageReleaseCommand = (service: string, packagePath: string): string =>
+  `node scripts/validate-ferrflow-package-release.mjs --package ${service} --changelog ${packagePath}/CHANGELOG.md`;
 
 const workspacePackages = [
   {
@@ -68,6 +80,11 @@ const workspacePackages = [
     service: 'aurora',
     packageName: auroraPackageName,
     path: 'packages/aurora',
+  },
+  {
+    service: 'api-gateway',
+    packageName: apiGatewayPackageName,
+    path: 'packages/api-gateway',
   },
   {
     service: 's3',
@@ -98,6 +115,16 @@ const workspacePackages = [
     service: 'cloudwatch',
     packageName: cloudwatchPackageName,
     path: 'packages/cloudwatch',
+  },
+  {
+    service: 'elasticache',
+    packageName: elasticachePackageName,
+    path: 'packages/elasticache',
+  },
+  {
+    service: 'opensearch',
+    packageName: opensearchPackageName,
+    path: 'packages/opensearch',
   },
 ];
 
@@ -382,6 +409,98 @@ new JsonFile(project, 'packages/aurora/package.json', {
 });
 
 new JsonFile(project, 'packages/aurora/tsconfig.json', {
+  obj: {
+    compilerOptions: {
+      rootDir: 'src',
+      outDir: 'lib',
+      alwaysStrict: true,
+      declaration: true,
+      declarationMap: true,
+      esModuleInterop: true,
+      experimentalDecorators: true,
+      forceConsistentCasingInFileNames: true,
+      inlineSourceMap: true,
+      inlineSources: true,
+      lib: ['ES2022'],
+      module: 'NodeNext',
+      moduleResolution: 'NodeNext',
+      noEmitOnError: false,
+      noFallthroughCasesInSwitch: true,
+      noImplicitAny: true,
+      noImplicitReturns: true,
+      noImplicitThis: true,
+      noUnusedLocals: true,
+      noUnusedParameters: true,
+      resolveJsonModule: true,
+      skipLibCheck: true,
+      strict: true,
+      strictNullChecks: true,
+      strictPropertyInitialization: true,
+      stripInternal: true,
+      target: 'ES2022',
+      types: ['node'],
+      verbatimModuleSyntax: true,
+    },
+    include: ['src/**/*.ts'],
+    exclude: ['lib', 'node_modules'],
+  },
+});
+
+new JsonFile(project, 'packages/api-gateway/package.json', {
+  readonly: false,
+  obj: {
+    name: apiGatewayPackageName,
+    version: packageVersion('packages/api-gateway/package.json'),
+    description: 'API Gateway constructs for AWS CDK',
+    repository: {
+      type: 'git',
+      url: repositoryUrl,
+      directory: 'packages/api-gateway',
+    },
+    author: {
+      name: 'crmagz',
+      email: '33166233+crmagz@users.noreply.github.com',
+    },
+    license: 'Apache-2.0',
+    type: 'module',
+    main: 'lib/index.js',
+    types: 'lib/index.d.ts',
+    exports: {
+      '.': {
+        types: './lib/index.d.ts',
+        import: './lib/index.js',
+      },
+    },
+    files: ['lib', 'README.md', 'docs'],
+    sideEffects: false,
+    publishConfig: {
+      access: 'public',
+    },
+    scripts: {
+      build: 'tsc -p tsconfig.json',
+      clean: 'rm -rf lib tsconfig.tsbuildinfo',
+      package: 'npm pack --pack-destination ../../dist/js',
+    },
+    dependencies: {
+      [corePackageName]: `^${packageVersion('packages/core/package.json')}`,
+    },
+    peerDependencies: {
+      'aws-cdk-lib': awsCdkLibPeerVersion,
+      constructs: constructsPeerVersion,
+    },
+    devDependencies: {
+      'aws-cdk-lib': awsCdkLibVersion,
+      constructs: constructsVersion,
+    },
+    keywords: ['aws-cdk', 'cdk', 'constructs', 'api-gateway', 'api', 'typescript', 'esm'],
+    engines: {
+      node: '>= 20.0.0',
+    },
+    packageManager: `npm@${npmVersion}`,
+  },
+});
+
+new JsonFile(project, 'packages/api-gateway/tsconfig.json', {
   obj: {
     compilerOptions: {
       rootDir: 'src',
@@ -971,6 +1090,190 @@ new JsonFile(project, 'packages/cloudwatch/tsconfig.json', {
   },
 });
 
+new JsonFile(project, 'packages/elasticache/package.json', {
+  readonly: false,
+  obj: {
+    name: elasticachePackageName,
+    version: packageVersion('packages/elasticache/package.json'),
+    description: 'ElastiCache constructs for AWS CDK',
+    repository: {
+      type: 'git',
+      url: repositoryUrl,
+      directory: 'packages/elasticache',
+    },
+    author: {
+      name: 'crmagz',
+      email: '33166233+crmagz@users.noreply.github.com',
+    },
+    license: 'Apache-2.0',
+    type: 'module',
+    main: 'lib/index.js',
+    types: 'lib/index.d.ts',
+    exports: {
+      '.': {
+        types: './lib/index.d.ts',
+        import: './lib/index.js',
+      },
+    },
+    files: ['lib', 'README.md', 'docs'],
+    sideEffects: false,
+    publishConfig: {
+      access: 'public',
+    },
+    scripts: {
+      build: 'tsc -p tsconfig.json',
+      clean: 'rm -rf lib tsconfig.tsbuildinfo',
+      package: 'npm pack --pack-destination ../../dist/js',
+    },
+    dependencies: {
+      [corePackageName]: `^${packageVersion('packages/core/package.json')}`,
+    },
+    peerDependencies: {
+      'aws-cdk-lib': awsCdkLibPeerVersion,
+      constructs: constructsPeerVersion,
+    },
+    devDependencies: {
+      'aws-cdk-lib': awsCdkLibVersion,
+      constructs: constructsVersion,
+    },
+    keywords: ['aws-cdk', 'cdk', 'constructs', 'elasticache', 'cache', 'typescript', 'esm'],
+    engines: {
+      node: '>= 20.0.0',
+    },
+    packageManager: `npm@${npmVersion}`,
+  },
+});
+
+new JsonFile(project, 'packages/elasticache/tsconfig.json', {
+  obj: {
+    compilerOptions: {
+      rootDir: 'src',
+      outDir: 'lib',
+      alwaysStrict: true,
+      declaration: true,
+      declarationMap: true,
+      esModuleInterop: true,
+      experimentalDecorators: true,
+      forceConsistentCasingInFileNames: true,
+      inlineSourceMap: true,
+      inlineSources: true,
+      lib: ['ES2022'],
+      module: 'NodeNext',
+      moduleResolution: 'NodeNext',
+      noEmitOnError: false,
+      noFallthroughCasesInSwitch: true,
+      noImplicitAny: true,
+      noImplicitReturns: true,
+      noImplicitThis: true,
+      noUnusedLocals: true,
+      noUnusedParameters: true,
+      resolveJsonModule: true,
+      skipLibCheck: true,
+      strict: true,
+      strictNullChecks: true,
+      strictPropertyInitialization: true,
+      stripInternal: true,
+      target: 'ES2022',
+      types: ['node'],
+      verbatimModuleSyntax: true,
+    },
+    include: ['src/**/*.ts'],
+    exclude: ['lib', 'node_modules'],
+  },
+});
+
+new JsonFile(project, 'packages/opensearch/package.json', {
+  readonly: false,
+  obj: {
+    name: opensearchPackageName,
+    version: packageVersion('packages/opensearch/package.json'),
+    description: 'OpenSearch constructs for AWS CDK',
+    repository: {
+      type: 'git',
+      url: repositoryUrl,
+      directory: 'packages/opensearch',
+    },
+    author: {
+      name: 'crmagz',
+      email: '33166233+crmagz@users.noreply.github.com',
+    },
+    license: 'Apache-2.0',
+    type: 'module',
+    main: 'lib/index.js',
+    types: 'lib/index.d.ts',
+    exports: {
+      '.': {
+        types: './lib/index.d.ts',
+        import: './lib/index.js',
+      },
+    },
+    files: ['lib', 'README.md', 'docs'],
+    sideEffects: false,
+    publishConfig: {
+      access: 'public',
+    },
+    scripts: {
+      build: 'tsc -p tsconfig.json',
+      clean: 'rm -rf lib tsconfig.tsbuildinfo',
+      package: 'npm pack --pack-destination ../../dist/js',
+    },
+    dependencies: {
+      [corePackageName]: `^${packageVersion('packages/core/package.json')}`,
+    },
+    peerDependencies: {
+      'aws-cdk-lib': awsCdkLibPeerVersion,
+      constructs: constructsPeerVersion,
+    },
+    devDependencies: {
+      'aws-cdk-lib': awsCdkLibVersion,
+      constructs: constructsVersion,
+    },
+    keywords: ['aws-cdk', 'cdk', 'constructs', 'opensearch', 'search', 'typescript', 'esm'],
+    engines: {
+      node: '>= 20.0.0',
+    },
+    packageManager: `npm@${npmVersion}`,
+  },
+});
+
+new JsonFile(project, 'packages/opensearch/tsconfig.json', {
+  obj: {
+    compilerOptions: {
+      rootDir: 'src',
+      outDir: 'lib',
+      alwaysStrict: true,
+      declaration: true,
+      declarationMap: true,
+      esModuleInterop: true,
+      experimentalDecorators: true,
+      forceConsistentCasingInFileNames: true,
+      inlineSourceMap: true,
+      inlineSources: true,
+      lib: ['ES2022'],
+      module: 'NodeNext',
+      moduleResolution: 'NodeNext',
+      noEmitOnError: false,
+      noFallthroughCasesInSwitch: true,
+      noImplicitAny: true,
+      noImplicitReturns: true,
+      noImplicitThis: true,
+      noUnusedLocals: true,
+      noUnusedParameters: true,
+      resolveJsonModule: true,
+      skipLibCheck: true,
+      strict: true,
+      strictNullChecks: true,
+      strictPropertyInitialization: true,
+      stripInternal: true,
+      target: 'ES2022',
+      types: ['node'],
+      verbatimModuleSyntax: true,
+    },
+    include: ['src/**/*.ts'],
+    exclude: ['lib', 'node_modules'],
+  },
+});
+
 new JsonFile(project, 'ferrflow.json', {
   obj: {
     $schema: 'https://ferrflow.com/schema/ferrflow.json',
@@ -996,7 +1299,12 @@ new JsonFile(project, 'ferrflow.json', {
         },
       ],
       hooks: {
-        postPublish: releasePostPublishCommand(workspacePackage.packageName),
+        preCommit: sanitizeReleaseChangelogCommand(workspacePackage.service, workspacePackage.path),
+        prePublish: validatePackageReleaseCommand(workspacePackage.service, workspacePackage.path),
+        postPublish: releasePostPublishCommand(
+          workspacePackage.service,
+          workspacePackage.packageName,
+        ),
       },
     })),
   },

@@ -1,6 +1,6 @@
 {
   "name": "@cdk-construct/cloudfront",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "CloudFront distribution constructs for AWS CDK",
   "repository": {
     "type": "git",
@@ -36,7 +36,7 @@
     "package": "npm pack --pack-destination ../../dist/js"
   },
   "dependencies": {
-    "@cdk-construct/core": "^0.2.0"
+    "@cdk-construct/core": "^0.3.0"
   },
   "peerDependencies": {
     "aws-cdk-lib": "^2.258.1",

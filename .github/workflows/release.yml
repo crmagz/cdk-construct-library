@@ -7,6 +7,11 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      publish_package:
+        description: Optional workspace package name to publish without creating a new release, for example elasticache.
+        required: false
+        type: string
 
 concurrency:
   group: ${{ github.workflow }}
@@ -42,12 +47,31 @@ jobs:
       - name: Fetch release tags
         run: git fetch --force --tags origin
       - name: Release packages
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.publish_package != '') }}
         uses: FerrLabs/FerrFlow@v5.2.4
         with:
           version: 5.2.4
           mode: release
         env:
           GITHUB_TOKEN: ${{ secrets.TOKEN }}
+          GH_TOKEN: ${{ secrets.TOKEN }}
           DO_NOT_TRACK: "1"
           NPM_CONFIG_ACCESS: public
           NPM_CONFIG_PROVENANCE: "true"
+      - name: Redrive package publish
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_package != '' }}
+        run: |-
+          workspace="@cdk-construct/${{ inputs.publish_package }}"
+          npm run build --workspace @cdk-construct/core
+          if [ "$workspace" != "@cdk-construct/core" ]; then
+            npm run build --workspace "$workspace"
+          fi
+          npm publish --workspace "$workspace" --access public
+        env:
+          NPM_CONFIG_ACCESS: public
+          NPM_CONFIG_PROVENANCE: "true"
+      - name: Sanitize package GitHub releases
+        if: always()
+        run: node scripts/sanitize-package-github-releases.mjs
+        env:
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}

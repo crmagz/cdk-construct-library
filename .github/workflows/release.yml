@@ -6,15 +6,10 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch:
-    inputs:
-      publish_package:
-        description: Optional workspace package name to publish without creating a new release, for example elasticache.
-        required: false
-        type: string
+  workflow_dispatch: {}
 
 concurrency:
-  group: ${{ github.workflow }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -22,6 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pull-requests: write
       id-token: write
     steps:
       - name: Checkout
@@ -44,46 +40,17 @@ jobs:
           npm --version
       - name: Install dependencies
         run: npm ci
-      - name: Fetch release tags
-        run: git fetch --force --tags origin
-      - name: Snapshot existing release tags
-        run: git tag --list > /tmp/existing-release-tags.txt
-      - name: Package release summary
-        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.publish_package != '') }}
-        continue-on-error: true
-        run: |-
-          base="${{ github.event.before }}"
-          if [ -z "$base" ] || [ "$base" = "0000000000000000000000000000000000000000" ]; then
-            base="HEAD^"
-          fi
-          npm run release:preview -- --base "$base" --skip-ferrflow-plan --summary --summary-title "Package release summary"
-      - name: Release packages
-        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.publish_package != '') }}
-        uses: FerrLabs/FerrFlow@v5.2.4
+      - name: Create release PR or publish packages
+        uses: changesets/action@v1.9.0
         with:
-          version: 5.2.4
-          mode: release
+          version: npm run release:version
+          publish: npm run release:publish
+          title: "chore(release): version packages"
+          commit: "chore(release): version packages"
+          createGithubReleases: true
+          commitMode: github-api
         env:
           GITHUB_TOKEN: ${{ secrets.TOKEN }}
           GH_TOKEN: ${{ secrets.TOKEN }}
-          DO_NOT_TRACK: "1"
           NPM_CONFIG_ACCESS: public
           NPM_CONFIG_PROVENANCE: "true"
-          EXISTING_RELEASE_TAGS_FILE: /tmp/existing-release-tags.txt
-      - name: Redrive package publish
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_package != '' }}
-        run: |-
-          workspace="@cdk-construct/${{ inputs.publish_package }}"
-          npm run build --workspace @cdk-construct/core
-          if [ "$workspace" != "@cdk-construct/core" ]; then
-            npm run build --workspace "$workspace"
-          fi
-          npm publish --workspace "$workspace" --access public
-        env:
-          NPM_CONFIG_ACCESS: public
-          NPM_CONFIG_PROVENANCE: "true"
-      - name: Sanitize package GitHub releases
-        if: always()
-        run: node scripts/sanitize-package-github-releases.mjs
-        env:
-          GITHUB_TOKEN: ${{ secrets.TOKEN }}

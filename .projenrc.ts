@@ -17,7 +17,8 @@ const opensearchPackageName = '@cdk-construct/opensearch';
 const repositoryUrl = 'git+https://github.com/crmagz/cdk-construct-library.git';
 const nodeVersion = '24.16.0';
 const npmVersion = '11.16.0';
-const ferrFlowVersion = '5.2.4';
+const changesetsVersion = '2.31.0';
+const changesetsActionVersion = '1.9.0';
 const awsCdkCliVersion = '2.1126.0';
 const awsCdkLibVersion = '2.258.1';
 const constructsVersion = '10.6.0';
@@ -52,90 +53,6 @@ const packageVersion = (packageJsonPath: string, fallback = '0.0.0'): string => 
     return fallback;
   }
 };
-
-const sanitizeGithubReleaseCommand = (service: string): string =>
-  `node scripts/sanitize-ferrflow-github-release.mjs --package ${service}`;
-
-const releasePostPublishCommand = (service: string, packageName: string): string => {
-  const buildCommand =
-    packageName === corePackageName
-      ? `npm run build --workspace ${packageName}`
-      : `npm run build --workspace ${corePackageName} && npm run build --workspace ${packageName}`;
-
-  return `${sanitizeGithubReleaseCommand(service)} && ${buildCommand} && npm publish --workspace ${packageName} --access public`;
-};
-
-const sanitizeReleaseChangelogCommand = (service: string, packagePath: string): string =>
-  `node scripts/sanitize-ferrflow-changelog.mjs --package ${service} --changelog ${packagePath}/CHANGELOG.md`;
-
-const validatePackageReleaseCommand = (service: string, packagePath: string): string =>
-  [
-    `node scripts/validate-ferrflow-release-tag.mjs --package ${service}`,
-    `node scripts/validate-ferrflow-package-release.mjs --package ${service} --changelog ${packagePath}/CHANGELOG.md`,
-  ].join(' && ');
-
-const workspacePackages = [
-  {
-    service: 'core',
-    packageName: corePackageName,
-    path: 'packages/core',
-  },
-  {
-    service: 'aurora',
-    packageName: auroraPackageName,
-    path: 'packages/aurora',
-  },
-  {
-    service: 'api-gateway',
-    packageName: apiGatewayPackageName,
-    path: 'packages/api-gateway',
-  },
-  {
-    service: 's3',
-    packageName: s3PackageName,
-    path: 'packages/s3',
-  },
-  {
-    service: 'sqs',
-    packageName: sqsPackageName,
-    path: 'packages/sqs',
-  },
-  {
-    service: 'iam',
-    packageName: iamPackageName,
-    path: 'packages/iam',
-  },
-  {
-    service: 'cloudfront',
-    packageName: cloudfrontPackageName,
-    path: 'packages/cloudfront',
-  },
-  {
-    service: 'waf',
-    packageName: wafPackageName,
-    path: 'packages/waf',
-  },
-  {
-    service: 'cloudwatch',
-    packageName: cloudwatchPackageName,
-    path: 'packages/cloudwatch',
-  },
-  {
-    service: 'bedrock',
-    packageName: bedrockPackageName,
-    path: 'packages/bedrock',
-  },
-  {
-    service: 'elasticache',
-    packageName: elasticachePackageName,
-    path: 'packages/elasticache',
-  },
-  {
-    service: 'opensearch',
-    packageName: opensearchPackageName,
-    path: 'packages/opensearch',
-  },
-];
 
 const project = new typescript.TypeScriptProject({
   name: '@cdk-construct/library',
@@ -224,6 +141,7 @@ const project = new typescript.TypeScriptProject({
 
   peerDeps: [`aws-cdk-lib@${awsCdkLibPeerVersion}`, `constructs@${constructsPeerVersion}`],
   devDeps: [
+    `@changesets/cli@${changesetsVersion}`,
     `@types/node@${nodeTypesVersion}`,
     'eslint@^9.37.0',
     `aws-cdk@${awsCdkCliVersion}`,
@@ -1372,39 +1290,17 @@ new JsonFile(project, 'packages/opensearch/tsconfig.json', {
   },
 });
 
-new JsonFile(project, 'ferrflow.json', {
+new JsonFile(project, '.changeset/config.json', {
   obj: {
-    $schema: 'https://ferrflow.com/schema/ferrflow.json',
-    workspace: {
-      remote: 'origin',
-      branch: 'main',
-      anonymous_telemetry: false,
-      versioning: 'semver',
-      tagTemplate: '{name}/v{version}',
-      recoverMissedReleases: false,
-      releaseCommitMode: 'commit',
-      releaseCommitScope: 'per-package',
-      skipCi: true,
-    },
-    package: workspacePackages.map((workspacePackage) => ({
-      name: workspacePackage.service,
-      path: workspacePackage.path,
-      changelog: `${workspacePackage.path}/CHANGELOG.md`,
-      versionedFiles: [
-        {
-          path: `${workspacePackage.path}/package.json`,
-          format: 'json',
-        },
-      ],
-      hooks: {
-        preCommit: sanitizeReleaseChangelogCommand(workspacePackage.service, workspacePackage.path),
-        prePublish: validatePackageReleaseCommand(workspacePackage.service, workspacePackage.path),
-        postPublish: releasePostPublishCommand(
-          workspacePackage.service,
-          workspacePackage.packageName,
-        ),
-      },
-    })),
+    $schema: 'https://unpkg.com/@changesets/config@3.1.1/schema.json',
+    changelog: '@changesets/cli/changelog',
+    commit: false,
+    fixed: [],
+    linked: [],
+    access: 'public',
+    baseBranch: 'main',
+    updateInternalDependencies: 'patch',
+    ignore: [],
   },
 });
 
@@ -1452,15 +1348,10 @@ new TextFile(project, '.github/workflows/release.yml', {
     '  push:',
     '    branches:',
     '      - main',
-    '  workflow_dispatch:',
-    '    inputs:',
-    '      publish_package:',
-    '        description: Optional workspace package name to publish without creating a new release, for example elasticache.',
-    '        required: false',
-    '        type: string',
+    '  workflow_dispatch: {}',
     '',
     'concurrency:',
-    '  group: ${{ github.workflow }}',
+    '  group: ${{ github.workflow }}-${{ github.ref }}',
     '  cancel-in-progress: false',
     '',
     'jobs:',
@@ -1468,6 +1359,7 @@ new TextFile(project, '.github/workflows/release.yml', {
     '    runs-on: ubuntu-latest',
     '    permissions:',
     '      contents: write',
+    '      pull-requests: write',
     '      id-token: write',
     '    steps:',
     '      - name: Checkout',
@@ -1490,49 +1382,20 @@ new TextFile(project, '.github/workflows/release.yml', {
     '          npm --version',
     '      - name: Install dependencies',
     '        run: npm ci',
-    '      - name: Fetch release tags',
-    '        run: git fetch --force --tags origin',
-    '      - name: Snapshot existing release tags',
-    '        run: git tag --list > /tmp/existing-release-tags.txt',
-    '      - name: Package release summary',
-    "        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.publish_package != '') }}",
-    '        continue-on-error: true',
-    '        run: |-',
-    '          base="${{ github.event.before }}"',
-    '          if [ -z "$base" ] || [ "$base" = "0000000000000000000000000000000000000000" ]; then',
-    '            base="HEAD^"',
-    '          fi',
-    '          npm run release:preview -- --base "$base" --skip-ferrflow-plan --summary --summary-title "Package release summary"',
-    '      - name: Release packages',
-    "        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.publish_package != '') }}",
-    `        uses: FerrLabs/FerrFlow@v${ferrFlowVersion}`,
+    '      - name: Create release PR or publish packages',
+    `        uses: changesets/action@v${changesetsActionVersion}`,
     '        with:',
-    `          version: ${ferrFlowVersion}`,
-    '          mode: release',
+    '          version: npm run release:version',
+    '          publish: npm run release:publish',
+    '          title: "chore(release): version packages"',
+    '          commit: "chore(release): version packages"',
+    '          createGithubReleases: true',
+    '          commitMode: github-api',
     '        env:',
     '          GITHUB_TOKEN: ${{ secrets.TOKEN }}',
     '          GH_TOKEN: ${{ secrets.TOKEN }}',
-    '          DO_NOT_TRACK: "1"',
     '          NPM_CONFIG_ACCESS: public',
     '          NPM_CONFIG_PROVENANCE: "true"',
-    '          EXISTING_RELEASE_TAGS_FILE: /tmp/existing-release-tags.txt',
-    '      - name: Redrive package publish',
-    "        if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_package != '' }}",
-    '        run: |-',
-    '          workspace="@cdk-construct/${{ inputs.publish_package }}"',
-    '          npm run build --workspace @cdk-construct/core',
-    '          if [ "$workspace" != "@cdk-construct/core" ]; then',
-    '            npm run build --workspace "$workspace"',
-    '          fi',
-    '          npm publish --workspace "$workspace" --access public',
-    '        env:',
-    '          NPM_CONFIG_ACCESS: public',
-    '          NPM_CONFIG_PROVENANCE: "true"',
-    '      - name: Sanitize package GitHub releases',
-    '        if: always()',
-    '        run: node scripts/sanitize-package-github-releases.mjs',
-    '        env:',
-    '          GITHUB_TOKEN: ${{ secrets.TOKEN }}',
     '',
   ],
 });
@@ -1699,18 +1562,23 @@ project.addTask('security', {
 });
 
 project.addTask('release:check', {
-  description: 'Validate releasable conventional commits map to package paths',
-  exec: 'node scripts/validate-release-scopes.mjs',
+  description: 'Validate pending Changesets release intent',
+  exec: 'changeset status --verbose',
 });
 
-project.addTask('release:preview', {
-  description: 'Preview package-scoped releases for the current branch',
-  exec: `node scripts/preview-package-releases.mjs --ferrflow-version ${ferrFlowVersion}`,
+project.addTask('release:version', {
+  description: 'Apply pending Changesets to package versions and changelogs',
+  exec: 'changeset version',
+});
+
+project.addTask('release:publish', {
+  description: 'Build and publish changed workspace packages with Changesets',
+  exec: 'npm run build && changeset publish',
 });
 
 project.addTask('deploy', {
-  description: 'Publish releasable workspace packages with FerrFlow',
-  exec: 'ferrflow release',
+  description: 'Publish changed workspace packages with Changesets',
+  exec: 'npm run release:publish',
 });
 
 new TextFile(project, 'lefthook.yml', {
@@ -1773,10 +1641,10 @@ project.package.setScript('clean', 'projen clean');
 project.package.setScript('deploy', 'projen deploy');
 project.package.setScript('security', 'projen security');
 project.package.setScript('release:check', 'projen release:check');
-project.package.setScript(
-  'release:preview',
-  `node scripts/preview-package-releases.mjs --ferrflow-version ${ferrFlowVersion}`,
-);
+project.package.setScript('release:version', 'projen release:version');
+project.package.setScript('release:publish', 'projen release:publish');
+project.package.setScript('release', 'npm run release:publish');
+project.package.setScript('changeset', 'changeset');
 project.package.setScript('hooks:install', 'lefthook install');
 project.package.setScript('hooks:run', 'lefthook run pre-commit && lefthook run pre-push');
 project.package.setScript('prepare', 'lefthook install');
@@ -1823,40 +1691,34 @@ project.github?.tryFindWorkflow('build')?.file?.patch(
   JsonPatch.replace('/jobs/build/steps/3/name', 'synth'),
   JsonPatch.replace('/jobs/build/steps/3/run', 'npx projen default'),
   JsonPatch.add('/jobs/build/steps/4', {
-    name: 'release:check',
+    name: 'changeset:status',
     if: "${{ github.event_name == 'pull_request' }}",
     run: [
       'git fetch https://github.com/${{ github.repository }}.git ${{ github.event.pull_request.base.ref }}:refs/remotes/pr-base/base --depth=1',
-      'git fetch --force --tags origin',
-      'npm run release:check -- --base refs/remotes/pr-base/base',
+      'npx changeset status --since refs/remotes/pr-base/base',
     ].join('\n'),
   }),
   JsonPatch.add('/jobs/build/steps/5', {
-    name: 'release:preview',
-    if: "${{ github.event_name == 'pull_request' }}",
-    run: 'npm run release:preview -- --base refs/remotes/pr-base/base --summary --summary-title "Package release preview"',
-  }),
-  JsonPatch.add('/jobs/build/steps/6', {
     name: 'format:check',
     run: 'npm run format:check',
   }),
-  JsonPatch.add('/jobs/build/steps/7', {
+  JsonPatch.add('/jobs/build/steps/6', {
     name: 'lint',
     run: 'npm run lint',
   }),
-  JsonPatch.add('/jobs/build/steps/8', {
+  JsonPatch.add('/jobs/build/steps/7', {
     name: 'security',
     run: 'npm run security',
   }),
-  JsonPatch.add('/jobs/build/steps/9', {
+  JsonPatch.add('/jobs/build/steps/8', {
     name: 'test',
     run: 'npm test',
   }),
-  JsonPatch.add('/jobs/build/steps/10', {
+  JsonPatch.add('/jobs/build/steps/9', {
     name: 'compile',
     run: 'npm run compile',
   }),
-  JsonPatch.add('/jobs/build/steps/11', {
+  JsonPatch.add('/jobs/build/steps/10', {
     name: 'package',
     run: 'npm run package',
   }),

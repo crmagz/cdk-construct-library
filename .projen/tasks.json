@@ -85,10 +85,10 @@
     },
     "deploy": {
       "name": "deploy",
-      "description": "Publish releasable workspace packages with FerrFlow",
+      "description": "Publish changed workspace packages with Changesets",
       "steps": [
         {
-          "exec": "ferrflow release"
+          "exec": "npm run release:publish"
         }
       ]
     },
@@ -171,19 +171,28 @@
     },
     "release:check": {
       "name": "release:check",
-      "description": "Validate releasable conventional commits map to package paths",
+      "description": "Validate pending Changesets release intent",
       "steps": [
         {
-          "exec": "node scripts/validate-release-scopes.mjs"
+          "exec": "changeset status --verbose"
         }
       ]
     },
-    "release:preview": {
-      "name": "release:preview",
-      "description": "Preview package-scoped releases for the current branch",
+    "release:publish": {
+      "name": "release:publish",
+      "description": "Build and publish changed workspace packages with Changesets",
       "steps": [
         {
-          "exec": "node scripts/preview-package-releases.mjs --ferrflow-version 5.2.4"
+          "exec": "npm run build && changeset publish"
+        }
+      ]
+    },
+    "release:version": {
+      "name": "release:version",
+      "description": "Apply pending Changesets to package versions and changelogs",
+      "steps": [
+        {
+          "exec": "changeset version"
         }
       ]
     },

@@ -1,6 +1,6 @@
 export interface EksPackageInfo {
   readonly packageName: '@cdk-construct/eks';
-  readonly service: 'Amazon EKS';
+  readonly service: string;
   readonly releasePreview: boolean;
 }
 

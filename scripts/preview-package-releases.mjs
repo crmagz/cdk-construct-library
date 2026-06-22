@@ -220,6 +220,10 @@ const ferrFlowCommitHash = (commit) => {
   return commit.hash ?? commit.sha ?? commit.id;
 };
 
+const commitTouchesPackage = ({ commit, packageName }) =>
+  Array.isArray(commit.files) &&
+  commit.files.some((file) => file.startsWith(`packages/${packageName}/`));
+
 export const validateFerrFlowPackageScopedPlan = ({ packages, packageNames }) => {
   const packageNameSet = new Set(packageNames);
   const errors = [];
@@ -251,6 +255,10 @@ export const validateFerrFlowPackageScopedPlan = ({ packages, packageNames }) =>
       const prefix = hash === undefined ? subject : `${hash.slice(0, 7)} "${subject}"`;
 
       if (parsed === undefined || parsed.scope === undefined) {
+        if (Array.isArray(commit.files) && !commitTouchesPackage({ commit, packageName })) {
+          continue;
+        }
+
         errors.push(
           `${packageName} release includes ${prefix}, but releasable release notes must use a package scope.`,
         );
@@ -258,6 +266,10 @@ export const validateFerrFlowPackageScopedPlan = ({ packages, packageNames }) =>
       }
 
       if (parsed.scope !== packageName) {
+        if (Array.isArray(commit.files) && !commitTouchesPackage({ commit, packageName })) {
+          continue;
+        }
+
         errors.push(
           `${packageName} release includes out-of-scope commit ${prefix}; expected scope "${packageName}", got "${parsed.scope}".`,
         );
@@ -290,10 +302,31 @@ const ferrFlowPlanFromCheck = ({ ferrFlowVersion = defaultFerrFlowVersion } = {}
   return output.length === 0 ? { packages: [] } : JSON.parse(output);
 };
 
+const filesForCommitHash = (hash) => {
+  if (hash === undefined) {
+    return undefined;
+  }
+
+  const output = runGit(['diff-tree', '--no-commit-id', '--name-only', '-r', hash]);
+
+  return output.length === 0 ? [] : output.split('\n');
+};
+
+const annotateFerrFlowPlanWithFiles = (plan) => ({
+  ...plan,
+  packages: (plan.packages ?? []).map((releasePackage) => ({
+    ...releasePackage,
+    commits: (releasePackage.commits ?? []).map((commit) => ({
+      ...commit,
+      files: filesForCommitHash(ferrFlowCommitHash(commit)),
+    })),
+  })),
+});
+
 export const validateCurrentFerrFlowPlan = ({ ferrFlowVersion } = {}) => {
   const ferrflowConfig = readJson('ferrflow.json');
   const packageNames = packageNamesFromFerrflow(ferrflowConfig);
-  const plan = ferrFlowPlanFromCheck({ ferrFlowVersion });
+  const plan = annotateFerrFlowPlanWithFiles(ferrFlowPlanFromCheck({ ferrFlowVersion }));
 
   return validateFerrFlowPackageScopedPlan({
     packages: plan.packages ?? [],

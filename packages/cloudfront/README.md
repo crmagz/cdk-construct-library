@@ -42,3 +42,7 @@ new CloudFrontDistribution(stack, 'AssetsCdn', {
 ## Documentation
 
 - [Distribution construct](./docs/distribution.md)
+
+## Release Notes
+
+Package release notes follow Conventional Commit categories generated from Changesets summaries.

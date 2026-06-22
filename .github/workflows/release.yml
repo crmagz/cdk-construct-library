@@ -48,6 +48,15 @@ jobs:
         run: git fetch --force --tags origin
       - name: Snapshot existing release tags
         run: git tag --list > /tmp/existing-release-tags.txt
+      - name: Package release summary
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.publish_package != '') }}
+        continue-on-error: true
+        run: |-
+          base="${{ github.event.before }}"
+          if [ -z "$base" ] || [ "$base" = "0000000000000000000000000000000000000000" ]; then
+            base="HEAD^"
+          fi
+          npm run release:preview -- --base "$base" --skip-ferrflow-plan --summary --summary-title "Package release summary"
       - name: Release packages
         if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.publish_package != '') }}
         uses: FerrLabs/FerrFlow@v5.2.4

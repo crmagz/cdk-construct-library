@@ -5,6 +5,7 @@ import {
   bumpVersion,
   releasePreviewsFromCommits,
   renderReleasePreviews,
+  renderReleaseSummary,
   validateFerrFlowPackageScopedPlan,
 } from '../scripts/preview-package-releases.mjs';
 
@@ -93,6 +94,34 @@ test('renders a package-scoped release preview', () => {
   assert.match(preview, /0\.1\.0 -> 0\.2\.0 \(minor\)/);
   assert.match(preview, /feat\(elasticache\): add replication group construct/);
   assert.doesNotMatch(preview, /opensearch/);
+});
+
+test('renders a GitHub step summary for package releases', () => {
+  const summary = renderReleaseSummary({
+    title: 'Package release summary',
+    status: 'FerrFlow release plan is package-scoped.',
+    previews: [
+      {
+        packageName: 'bedrock',
+        currentVersion: '0.0.0',
+        nextVersion: '0.1.0',
+        bump: 'minor',
+        commits: [
+          {
+            hash: 'aaa1111',
+            type: 'feat',
+            subject: 'feat(bedrock): add agentcore constructs',
+          },
+        ],
+      },
+    ],
+  });
+
+  assert.match(summary, /^## Package release summary/m);
+  assert.match(summary, /^### bedrock\/v0\.1\.0/m);
+  assert.match(summary, /`0\.0\.0` -> `0\.1\.0` \(`minor`\)/);
+  assert.match(summary, /feat\(bedrock\): add agentcore constructs/);
+  assert.match(summary, /FerrFlow release plan is package-scoped/);
 });
 
 test('validates ferrflow release plan commits stay scoped to the package', () => {

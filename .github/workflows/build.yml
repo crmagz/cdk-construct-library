@@ -37,7 +37,7 @@ jobs:
           npm run release:check -- --base refs/remotes/pr-base/base
       - name: release:preview
         if: ${{ github.event_name == 'pull_request' }}
-        run: npm run release:preview -- --base refs/remotes/pr-base/base
+        run: npm run release:preview -- --base refs/remotes/pr-base/base --summary --summary-title "Package release preview"
       - name: format:check
         run: npm run format:check
       - name: lint

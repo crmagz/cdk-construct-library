@@ -5,22 +5,38 @@ Releases are managed with Changesets.
 ## Change Intent
 
 Package changes should include a `.changeset/*.md` file that names the package,
-the semver bump, and a short release-note summary:
+the semver bump, and a package-scoped Conventional Commit release-note summary:
 
 ```md
 ---
 '@cdk-construct/s3': minor
 ---
 
-Add bucket lifecycle defaults for non-production environments.
+feat(s3): add bucket lifecycle defaults for non-production environments
 ```
 
 One pull request can include one changeset for one package, multiple changesets
 for separate packages, or one changeset that intentionally bumps several
 packages together.
 
-Conventional Commit titles are still required for PR readability, but package
-versions and changelogs come from Changesets, not from inferred commit history.
+Conventional Commit titles are still required for PR readability. Package
+versions come from Changesets, while package changelogs and GitHub release notes
+are rendered into Conventional Commit categories such as `Breaking Changes`,
+`Features`, `Bug Fixes`, and `Performance`.
+
+Changeset summaries should start with the same Conventional Commit shape used by
+commit titles:
+
+```text
+feat(s3): add bucket lifecycle defaults
+fix(sqs): enforce dead-letter queue defaults
+perf(cloudfront): reduce distribution policy duplication
+feat(api-gateway)!: replace endpoint defaults
+```
+
+Changesets still uses `major`, `minor`, and `patch` internally to calculate the
+next version. Those terms should not appear as release-note sections after the
+version PR runs.
 
 ## Semver Rules
 

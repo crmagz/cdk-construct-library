@@ -1383,7 +1383,7 @@ new JsonFile(project, 'packages/opensearch/tsconfig.json', {
 new JsonFile(project, '.changeset/config.json', {
   obj: {
     $schema: 'https://unpkg.com/@changesets/config@3.1.1/schema.json',
-    changelog: '@changesets/cli/changelog',
+    changelog: ['./scripts/changeset-changelog.cjs', {}],
     commit: false,
     fixed: [],
     linked: [],
@@ -1633,12 +1633,12 @@ project.addTask('lint', {
 
 project.addTask('format', {
   description: 'Format source files with Prettier and ESLint fixes',
-  exec: 'prettier --write --no-error-on-unmatched-pattern README.md "docs/**/*.md" "packages/*/README.md" .projenrc.ts eslint.config.js "scripts/**/*.mjs" "tests/**/*.mjs" "packages/*/src/**/*.ts" "packages/*/test/**/*.ts" && eslint "packages/*/src/**/*.ts" "packages/*/test/**/*.ts" .projenrc.ts --fix --no-error-on-unmatched-pattern',
+  exec: 'prettier --write --no-error-on-unmatched-pattern README.md "docs/**/*.md" "packages/*/README.md" .projenrc.ts eslint.config.js "scripts/**/*.cjs" "scripts/**/*.mjs" "tests/**/*.mjs" "packages/*/src/**/*.ts" "packages/*/test/**/*.ts" && eslint "packages/*/src/**/*.ts" "packages/*/test/**/*.ts" .projenrc.ts --fix --no-error-on-unmatched-pattern',
 });
 
 project.addTask('format:check', {
   description: 'Check source formatting with Prettier',
-  exec: 'prettier --check --no-error-on-unmatched-pattern README.md "docs/**/*.md" "packages/*/README.md" .projenrc.ts eslint.config.js "scripts/**/*.mjs" "tests/**/*.mjs" "packages/*/src/**/*.ts" "packages/*/test/**/*.ts"',
+  exec: 'prettier --check --no-error-on-unmatched-pattern README.md "docs/**/*.md" "packages/*/README.md" .projenrc.ts eslint.config.js "scripts/**/*.cjs" "scripts/**/*.mjs" "tests/**/*.mjs" "packages/*/src/**/*.ts" "packages/*/test/**/*.ts"',
 });
 
 project.addTask('clean', {
@@ -1658,7 +1658,7 @@ project.addTask('release:check', {
 
 project.addTask('release:version', {
   description: 'Apply pending Changesets to package versions and changelogs',
-  exec: 'changeset version',
+  exec: 'changeset version && node scripts/format-changeset-changelogs.mjs',
 });
 
 project.addTask('release:publish', {

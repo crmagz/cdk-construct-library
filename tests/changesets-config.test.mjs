@@ -13,6 +13,7 @@ const readText = async (relativePath) => readFile(path.join(root, relativePath),
 
 test('changesets release config is wired for workspace package publishing', async () => {
   const rootPackage = await readJson('package.json');
+  const tasks = await readJson('.projen/tasks.json');
   const config = await readJson('.changeset/config.json');
   const releaseWorkflow = await readText('.github/workflows/release.yml');
   const buildWorkflow = await readText('.github/workflows/build.yml');
@@ -23,10 +24,14 @@ test('changesets release config is wired for workspace package publishing', asyn
   assert.equal(rootPackage.scripts['release:publish'], 'projen release:publish');
   assert.equal(rootPackage.scripts.release, 'npm run release:publish');
   assert.equal(rootPackage.scripts.changeset, 'changeset');
+  assert.equal(
+    tasks.tasks['release:version'].steps[0].exec,
+    'changeset version && node scripts/format-changeset-changelogs.mjs',
+  );
 
   assert.deepEqual(config, {
     $schema: 'https://unpkg.com/@changesets/config@3.1.1/schema.json',
-    changelog: '@changesets/cli/changelog',
+    changelog: ['./scripts/changeset-changelog.cjs', {}],
     commit: false,
     fixed: [],
     linked: [],
@@ -40,6 +45,7 @@ test('changesets release config is wired for workspace package publishing', asyn
   assert.match(releaseWorkflow, /uses: changesets\/action@v1\.9\.0/);
   assert.match(releaseWorkflow, /version: npm run release:version/);
   assert.match(releaseWorkflow, /publish: npm run release:publish/);
+  assert.match(releaseWorkflow, /createGithubReleases: true/);
   assert.match(releaseWorkflow, /NPM_CONFIG_PROVENANCE: "true"/);
   assert.doesNotMatch(releaseWorkflow, /FerrFlow/);
 

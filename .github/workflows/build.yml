@@ -32,8 +32,12 @@ jobs:
       - name: release:check
         if: ${{ github.event_name == 'pull_request' }}
         run: |-
-          git fetch https://github.com/${{ github.repository }}.git ${{ github.event.pull_request.base.ref }} --depth=1
-          npm run release:check -- --base FETCH_HEAD
+          git fetch https://github.com/${{ github.repository }}.git ${{ github.event.pull_request.base.ref }}:refs/remotes/pr-base/base --depth=1
+          git fetch --force --tags origin
+          npm run release:check -- --base refs/remotes/pr-base/base
+      - name: release:preview
+        if: ${{ github.event_name == 'pull_request' }}
+        run: npm run release:preview -- --base refs/remotes/pr-base/base --summary --summary-title "Package release preview"
       - name: format:check
         run: npm run format:check
       - name: lint

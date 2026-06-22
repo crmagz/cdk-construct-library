@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { appendFileSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -44,6 +44,17 @@ const parseArgs = (args) => {
 
     if (arg === '--skip-ferrflow-plan') {
       options.skipFerrFlowPlan = true;
+      continue;
+    }
+
+    if (arg === '--summary') {
+      options.summary = true;
+      continue;
+    }
+
+    if (arg === '--summary-title') {
+      options.summaryTitle = args[index + 1];
+      index += 1;
       continue;
     }
   }
@@ -324,6 +335,54 @@ export const renderReleasePreviews = (previews) => {
   return `${lines.join('\n').trimEnd()}\n`;
 };
 
+export const renderReleaseSummary = ({ previews, title = 'Package release preview', status }) => {
+  const lines = [`## ${title}`, ''];
+
+  if (previews.length === 0) {
+    lines.push('No package releases would be created from this change.');
+  } else {
+    for (const preview of previews) {
+      lines.push(`### ${preview.packageName}/v${preview.nextVersion}`);
+      lines.push('');
+      lines.push(
+        `\`${preview.currentVersion}\` -> \`${preview.nextVersion}\` (\`${preview.bump}\`)`,
+      );
+      lines.push('');
+
+      for (const type of Object.keys(typeHeadings)) {
+        const commits = preview.commits.filter((commit) => commit.type === type);
+
+        if (commits.length === 0) {
+          continue;
+        }
+
+        lines.push(`#### ${typeHeadings[type]}`);
+        lines.push('');
+
+        for (const commit of commits) {
+          lines.push(`- ${commit.subject} (${commit.hash})`);
+        }
+
+        lines.push('');
+      }
+    }
+  }
+
+  if (status !== undefined) {
+    lines.push('', status);
+  }
+
+  return `${lines.join('\n').trimEnd()}\n`;
+};
+
+const appendGithubStepSummary = ({ content, env = process.env }) => {
+  if (env.GITHUB_STEP_SUMMARY === undefined) {
+    return;
+  }
+
+  appendFileSync(env.GITHUB_STEP_SUMMARY, `${content}\n`);
+};
+
 const defaultBaseRef = () => {
   if (process.env.GITHUB_BASE_REF) {
     return `origin/${process.env.GITHUB_BASE_REF}`;
@@ -353,27 +412,43 @@ export const previewCurrentBranch = ({ base = defaultBaseRef(), head = 'HEAD' } 
 const main = () => {
   const options = parseArgs(process.argv.slice(2));
   const previews = previewCurrentBranch(options);
+  let status;
+  let errors = [];
 
   console.log(renderReleasePreviews(previews));
 
-  if (options.skipFerrFlowPlan === true) {
-    return;
+  if (options.skipFerrFlowPlan !== true) {
+    errors = validateCurrentFerrFlowPlan({
+      ferrFlowVersion: options.ferrFlowVersion,
+    });
+
+    if (errors.length === 0) {
+      status = 'FerrFlow release plan is package-scoped.';
+      console.log(status);
+    } else {
+      status = [
+        'FerrFlow release plan contains out-of-scope package release notes.',
+        '',
+        ...errors.map((error) => `- ${error}`),
+      ].join('\n');
+
+      console.error('FerrFlow release plan contains out-of-scope package release notes.');
+      for (const error of errors) {
+        console.error(`- ${error}`);
+      }
+      process.exitCode = 1;
+    }
   }
 
-  const errors = validateCurrentFerrFlowPlan({
-    ferrFlowVersion: options.ferrFlowVersion,
-  });
-
-  if (errors.length === 0) {
-    console.log('FerrFlow release plan is package-scoped.');
-    return;
+  if (options.summary === true) {
+    appendGithubStepSummary({
+      content: renderReleaseSummary({
+        previews,
+        title: options.summaryTitle,
+        status,
+      }),
+    });
   }
-
-  console.error('FerrFlow release plan contains out-of-scope package release notes.');
-  for (const error of errors) {
-    console.error(`- ${error}`);
-  }
-  process.exitCode = 1;
 };
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

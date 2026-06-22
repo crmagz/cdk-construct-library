@@ -6,6 +6,6 @@ export interface EksPackageInfo {
 
 export const eksPackageInfo: EksPackageInfo = {
   packageName: '@cdk-construct/eks',
-  service: 'Amazon EKS',
+  service: 'Amazon Elastic Kubernetes Service',
   releasePreview: true,
 };

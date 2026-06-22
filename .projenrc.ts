@@ -1383,7 +1383,7 @@ new JsonFile(project, 'packages/opensearch/tsconfig.json', {
 new JsonFile(project, '.changeset/config.json', {
   obj: {
     $schema: 'https://unpkg.com/@changesets/config@3.1.1/schema.json',
-    changelog: ['./scripts/changeset-changelog.cjs', {}],
+    changelog: ['../scripts/changeset-changelog.cjs', {}],
     commit: false,
     fixed: [],
     linked: [],

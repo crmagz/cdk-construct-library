@@ -31,7 +31,7 @@ test('changesets release config is wired for workspace package publishing', asyn
 
   assert.deepEqual(config, {
     $schema: 'https://unpkg.com/@changesets/config@3.1.1/schema.json',
-    changelog: ['./scripts/changeset-changelog.cjs', {}],
+    changelog: ['../scripts/changeset-changelog.cjs', {}],
     commit: false,
     fixed: [],
     linked: [],

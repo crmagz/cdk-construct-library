@@ -1782,10 +1782,10 @@ project.github?.tryFindWorkflow('build')?.file?.patch(
   JsonPatch.replace('/jobs/build/steps/3/run', 'npx projen default'),
   JsonPatch.add('/jobs/build/steps/4', {
     name: 'changeset:status',
-    if: "${{ github.event_name == 'pull_request' }}",
+    if: "${{ github.event_name == 'pull_request' && !startsWith(github.event.pull_request.head.ref, 'changeset-release/') }}",
     run: [
       'git fetch https://github.com/${{ github.repository }}.git ${{ github.event.pull_request.base.ref }}:refs/remotes/pr-base/base --depth=1',
-      'npx changeset status --since refs/remotes/pr-base/base',
+      'npx changeset status --since refs/remotes/pr-base/base --verbose',
     ].join('\n'),
   }),
   JsonPatch.add('/jobs/build/steps/5', {

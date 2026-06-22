@@ -15,6 +15,7 @@ test('changesets release config is wired for workspace package publishing', asyn
   const rootPackage = await readJson('package.json');
   const config = await readJson('.changeset/config.json');
   const releaseWorkflow = await readText('.github/workflows/release.yml');
+  const buildWorkflow = await readText('.github/workflows/build.yml');
 
   assert.equal(existsSync(path.join(root, 'ferrflow.json')), false);
   assert.equal(rootPackage.devDependencies['@changesets/cli'], '2.31.0');
@@ -41,4 +42,13 @@ test('changesets release config is wired for workspace package publishing', asyn
   assert.match(releaseWorkflow, /publish: npm run release:publish/);
   assert.match(releaseWorkflow, /NPM_CONFIG_PROVENANCE: "true"/);
   assert.doesNotMatch(releaseWorkflow, /FerrFlow/);
+
+  assert.match(
+    buildWorkflow,
+    /if: \$\{\{ github\.event_name == 'pull_request' && !startsWith\(github\.event\.pull_request\.head\.ref, 'changeset-release\/'\) \}\}/,
+  );
+  assert.match(
+    buildWorkflow,
+    /npx changeset status --since refs\/remotes\/pr-base\/base --verbose/,
+  );
 });

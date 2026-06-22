@@ -4,8 +4,8 @@ export interface EksPackageInfo {
   readonly releasePreview: boolean;
 }
 
-export const eksPackageInfo: EksPackageInfo = {
+export const eksPackageInfo: EksPackageInfo = Object.freeze({
   packageName: '@cdk-construct/eks',
   service: 'Amazon Elastic Kubernetes Service',
   releasePreview: true,
-};
+});

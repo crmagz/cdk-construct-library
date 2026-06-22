@@ -2,6 +2,7 @@
 
 * text=auto eol=lf
 *.snap linguist-generated
+/.changeset/config.json linguist-generated
 /.gitattributes linguist-generated
 /.github/ISSUE_TEMPLATE/bug_report.yml linguist-generated
 /.github/ISSUE_TEMPLATE/config.yml linguist-generated
@@ -21,7 +22,6 @@
 /.projen/files.json linguist-generated
 /.projen/tasks.json linguist-generated
 /eslint.config.js linguist-generated
-/ferrflow.json linguist-generated
 /lefthook.yml linguist-generated
 /LICENSE linguist-generated
 /package-lock.json linguist-generated

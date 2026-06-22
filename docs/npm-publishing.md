@@ -57,23 +57,20 @@ The GitHub workflow must request OIDC:
 ```yaml
 permissions:
   contents: write
+  pull-requests: write
   id-token: write
 ```
 
 ## CI Release Flow
 
-FerrFlow controls which workspaces publish by inspecting Conventional Commits
-that touched each package path since that package's latest service tag.
+Changesets controls which workspaces publish from explicit `.changeset/*.md`
+files. The workflow has two phases:
 
-A release can include one package or multiple packages. Use scopes such as
-`feat(s3): add bucket construct` and `fix(core): preserve metadata` so release
-notes stay readable.
+1. A package PR merges with one or more changeset files.
+2. Changesets opens a version PR with package version and changelog updates.
+3. Merging the version PR publishes the changed packages to npm.
 
-Published packages receive matching GitHub releases and service tags:
-
-```text
-<service>/v<semver>
-```
+This keeps the generated changelog visible before publishing.
 
 ## Common Failures
 

@@ -20,12 +20,15 @@
     "post-compile": "projen post-compile",
     "pre-compile": "projen pre-compile",
     "release:check": "projen release:check",
-    "release:preview": "node scripts/preview-package-releases.mjs --ferrflow-version 5.2.4",
+    "release:publish": "projen release:publish",
+    "release:version": "projen release:version",
     "security": "projen security",
     "test": "projen test",
     "test:watch": "projen test:watch",
     "watch": "projen watch",
     "projen": "projen",
+    "release": "npm run release:publish",
+    "changeset": "changeset",
     "hooks:install": "lefthook install",
     "hooks:run": "lefthook run pre-commit && lefthook run pre-push",
     "prepare": "lefthook install"
@@ -36,6 +39,7 @@
     "organization": false
   },
   "devDependencies": {
+    "@changesets/cli": "2.31.0",
     "@types/jest": "^30.0.0",
     "@types/node": "24.13.2",
     "aws-cdk": "2.1126.0",

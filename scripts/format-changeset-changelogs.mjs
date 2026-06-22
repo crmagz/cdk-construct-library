@@ -1,10 +1,9 @@
-import { readdir, readFile, writeFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { execFile } from 'node:child_process';
 import path from 'node:path';
 import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
 
-const changelogFileName = 'CHANGELOG.md';
 const semverHeadingPattern = /^### (Major|Minor|Patch) Changes$/;
 const versionHeadingPattern = /^## /;
 const commitHashLinePattern = /^-\s+(?<commit>[a-f0-9]{7,40}):\s+/;
@@ -222,13 +221,23 @@ const resolveCommitSubjects = async (commits) => {
   return new Map(entries.filter((entry) => entry[1]));
 };
 
-const findPackageChangelogs = async (root) => {
-  const packagesDir = path.join(root, 'packages');
-  const entries = await readdir(packagesDir, { withFileTypes: true });
+const findChangedPackageChangelogs = async (root) => {
+  try {
+    const { stdout } = await execFileAsync(
+      'git',
+      ['diff', '--name-only', '--', 'packages/*/CHANGELOG.md'],
+      {
+        cwd: root,
+      },
+    );
 
-  return entries
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => path.join(packagesDir, entry.name, changelogFileName));
+    return stdout
+      .split('\n')
+      .filter(Boolean)
+      .map((relativePath) => path.join(root, relativePath));
+  } catch {
+    return [];
+  }
 };
 
 export const formatChangelogFile = async (filePath) => {
@@ -241,8 +250,8 @@ export const formatChangelogFile = async (filePath) => {
   }
 };
 
-export const formatPackageChangelogs = async (root = process.cwd()) => {
-  const changelogPaths = await findPackageChangelogs(root);
+export const formatChangedPackageChangelogs = async (root = process.cwd()) => {
+  const changelogPaths = await findChangedPackageChangelogs(root);
 
   await Promise.all(changelogPaths.map(formatChangelogFile));
 };
@@ -250,5 +259,5 @@ export const formatPackageChangelogs = async (root = process.cwd()) => {
 const isDirectExecution = process.argv[1] === fileURLToPath(import.meta.url);
 
 if (isDirectExecution) {
-  await formatPackageChangelogs();
+  await formatChangedPackageChangelogs();
 }

@@ -153,6 +153,53 @@ test('validates ferrflow release plan commits stay scoped to the package', () =>
   assert.match(errors[0], /expected scope "opensearch", got "api-gateway"/);
 });
 
+test('ignores stale ferrflow commits that do not touch the released package', () => {
+  const errors = validateFerrFlowPackageScopedPlan({
+    packageNames: ['bedrock', 'elasticache'],
+    packages: [
+      {
+        name: 'bedrock',
+        commits: [
+          {
+            hash: 'aaa1111',
+            subject: 'feat(bedrock): add agentcore constructs',
+            files: ['packages/bedrock/src/runtime.ts'],
+          },
+          {
+            hash: 'bbb2222',
+            subject: 'feat(elasticache): add replication group construct',
+            files: ['packages/elasticache/src/replication-group.ts'],
+          },
+        ],
+      },
+    ],
+  });
+
+  assert.deepEqual(errors, []);
+});
+
+test('rejects out-of-scope ferrflow commits that touch the released package', () => {
+  const errors = validateFerrFlowPackageScopedPlan({
+    packageNames: ['bedrock', 'elasticache'],
+    packages: [
+      {
+        name: 'bedrock',
+        commits: [
+          {
+            hash: 'aaa1111',
+            subject: 'feat(elasticache): touch bedrock package',
+            files: ['packages/bedrock/src/runtime.ts'],
+          },
+        ],
+      },
+    ],
+  });
+
+  assert.equal(errors.length, 1);
+  assert.match(errors[0], /bedrock release includes out-of-scope commit/);
+  assert.match(errors[0], /expected scope "bedrock", got "elasticache"/);
+});
+
 test('rejects unscoped releasable commits in ferrflow release plans', () => {
   const errors = validateFerrFlowPackageScopedPlan({
     packageNames: ['opensearch'],

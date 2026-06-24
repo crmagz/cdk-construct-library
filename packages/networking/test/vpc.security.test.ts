@@ -21,15 +21,21 @@ const createSecurityApp = (): App => {
 
 describe('NetworkingVpc security', () => {
   it('passes AWS Solutions checks for the production fixture', () => {
+    const originalExitCode = process.exitCode;
     const app = createSecurityApp();
     const stack = new Stack(app, 'NetworkingVpcSecurityStack');
 
-    new NetworkingVpc(stack, 'Network', {
-      env: prodEnv,
-      vpcName: 'security-network-prod',
-    });
+    try {
+      new NetworkingVpc(stack, 'Network', {
+        env: prodEnv,
+        vpcName: 'security-network-prod',
+      });
 
-    expect(() => app.synth()).not.toThrow();
+      expect(() => app.synth()).not.toThrow();
+      expect(process.exitCode).toBe(originalExitCode);
+    } finally {
+      process.exitCode = originalExitCode;
+    }
   });
 
   it('synthesizes VPC flow logs by default', () => {

@@ -63,6 +63,10 @@ const validateNetworkingVpcProps = (props: NetworkingVpcProps): void => {
     throw new Error('NetworkingVpc vpcName must not be empty.');
   }
 
+  if (props.cidrBlock !== undefined && props.cidrBlock.trim().length === 0) {
+    throw new Error('NetworkingVpc cidrBlock must not be empty.');
+  }
+
   if (props.cidrBlock !== undefined && props.ipAddresses !== undefined) {
     throw new Error('NetworkingVpc cannot specify both cidrBlock and ipAddresses.');
   }
@@ -78,6 +82,21 @@ const validateNetworkingVpcProps = (props: NetworkingVpcProps): void => {
   if (props.availabilityZones !== undefined && props.availabilityZones.length === 0) {
     throw new Error('NetworkingVpc availabilityZones must include at least one zone.');
   }
+
+  const availabilityZones = props.availabilityZones ?? [];
+  const uniqueAvailabilityZones = new Set<string>();
+
+  availabilityZones.forEach((availabilityZone) => {
+    if (availabilityZone.trim().length === 0) {
+      throw new Error('NetworkingVpc availabilityZones must not contain empty values.');
+    }
+
+    if (uniqueAvailabilityZones.has(availabilityZone)) {
+      throw new Error(`NetworkingVpc availability zone ${availabilityZone} must be unique.`);
+    }
+
+    uniqueAvailabilityZones.add(availabilityZone);
+  });
 };
 
 const resolveAvailabilityZones = (

@@ -163,6 +163,14 @@ describe('NetworkingVpc', () => {
     const stack = new Stack();
 
     expect(() => {
+      createNetworkingVpc(stack, 'BlankCidrNetwork', {
+        env: prodEnv,
+        vpcName: 'blank-cidr-network-prod',
+        cidrBlock: ' ',
+      });
+    }).toThrow('NetworkingVpc cidrBlock must not be empty.');
+
+    expect(() => {
       createNetworkingVpc(stack, 'Network', {
         env: prodEnv,
         vpcName: 'invalid-network-prod',
@@ -210,5 +218,21 @@ describe('NetworkingVpc', () => {
         availabilityZones: [],
       });
     }).toThrow('NetworkingVpc availabilityZones must include at least one zone.');
+
+    expect(() => {
+      createNetworkingVpc(stack, 'BlankAzNetwork', {
+        env: prodEnv,
+        vpcName: 'blank-az-network-prod',
+        availabilityZones: ['us-east-1a', ' '],
+      });
+    }).toThrow('NetworkingVpc availabilityZones must not contain empty values.');
+
+    expect(() => {
+      createNetworkingVpc(stack, 'DuplicateAzNetwork', {
+        env: prodEnv,
+        vpcName: 'duplicate-az-network-prod',
+        availabilityZones: ['us-east-1a', 'us-east-1a'],
+      });
+    }).toThrow('NetworkingVpc availability zone us-east-1a must be unique.');
   });
 });

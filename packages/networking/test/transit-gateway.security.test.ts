@@ -20,15 +20,21 @@ const createSecurityApp = (): App => {
 
 describe('TransitGateway security', () => {
   it('passes AWS Solutions checks for the production fixture', () => {
+    const originalExitCode = process.exitCode;
     const app = createSecurityApp();
     const stack = new Stack(app, 'TransitGatewaySecurityStack');
 
-    new TransitGateway(stack, 'Transit', {
-      env: prodEnv,
-      transitGatewayName: 'security-core-network-prod',
-    });
+    try {
+      new TransitGateway(stack, 'Transit', {
+        env: prodEnv,
+        transitGatewayName: 'security-core-network-prod',
+      });
 
-    expect(() => app.synth()).not.toThrow();
+      expect(() => app.synth()).not.toThrow();
+      expect(process.exitCode).toBe(originalExitCode);
+    } finally {
+      process.exitCode = originalExitCode;
+    }
   });
 
   it('synthesizes explicit secure defaults', () => {

@@ -13,18 +13,28 @@ npm install @cdk-construct/networking @cdk-construct/core
 ```ts
 import { Stack } from 'aws-cdk-lib';
 import { EnvironmentName } from '@cdk-construct/core';
-import { networkingPackageName } from '@cdk-construct/networking';
+import { NetworkingVpc } from '@cdk-construct/networking';
 
 const stack = new Stack();
 
-console.log(networkingPackageName, EnvironmentName.PROD, stack.stackName);
+new NetworkingVpc(stack, 'Network', {
+  vpcName: 'shared-network-prod',
+  env: {
+    name: EnvironmentName.PROD,
+    account: '123456789012',
+    region: 'us-east-1',
+  },
+});
 ```
 
 ## Defaults
 
-- Provides environment-aware networking constructs.
+- Creates public, private-with-egress, and isolated subnet groups by default.
+- Enables VPC flow logs to CloudWatch Logs by default.
+- Restricts the default security group.
+- Uses production-oriented defaults with three Availability Zones and two NAT gateways.
+- Uses smaller non-production defaults with two Availability Zones and one NAT gateway.
 - Keeps CDK escape hatches explicit through typed override props.
-- Exposes package APIs from ESM-compatible TypeScript sources.
 
 ## Documentation
 

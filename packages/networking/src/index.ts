@@ -1,1 +1,2 @@
-export const networkingPackageName = '@cdk-construct/networking';
+export * from './types.js';
+export * from './vpc.js';

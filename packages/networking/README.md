@@ -44,8 +44,8 @@ new TransitGateway(stack, 'Transit', {
 - Uses a `/16` VPC CIDR by default, with smaller public subnets and larger private subnets.
 - Enables VPC flow logs to CloudWatch Logs by default.
 - Restricts the default security group.
-- Uses production-oriented defaults with three Availability Zones and two NAT gateways.
-- Uses smaller non-production defaults with two Availability Zones and one NAT gateway.
+- Uses three Availability Zones by default for every environment.
+- Uses two NAT gateways in production and one NAT gateway in non-production by default.
 - Creates transit gateways with shared attachment auto-accept and default route table association disabled.
 - Enables DNS, ECMP, encryption, and security group referencing on transit gateways by default.
 - Creates VPC attachments with DNS support enabled and IPv6/appliance mode disabled by default.

@@ -91,6 +91,7 @@ describe('NetworkingVpc', () => {
     const { dataSubnets, vpc } = createNetworkingVpc(stack, 'Network', {
       env: { name: EnvironmentName.DEV },
       vpcName: 'shared-network-dev',
+      maxAzs: 2,
       natGateways: 0,
       subnetConfiguration: [
         {
@@ -108,6 +109,28 @@ describe('NetworkingVpc', () => {
     expect(vpc.publicSubnets).toHaveLength(0);
 
     Template.fromStack(stack).resourceCountIs('AWS::EC2::NatGateway', 0);
+  });
+
+  it('honors maxAzs overrides when a region is configured', () => {
+    const stack = new Stack();
+
+    const { vpc } = createNetworkingVpc(stack, 'Network', {
+      env: prodEnv,
+      vpcName: 'max-az-network-prod',
+      maxAzs: 2,
+      natGateways: 0,
+    });
+
+    expect(vpc.availabilityZones).toEqual(['us-east-1a', 'us-east-1b']);
+
+    const template = Template.fromStack(stack);
+    template.resourceCountIs('AWS::EC2::Subnet', 6);
+    template.hasResourceProperties('AWS::EC2::Subnet', {
+      AvailabilityZone: 'us-east-1a',
+    });
+    template.hasResourceProperties('AWS::EC2::Subnet', {
+      AvailabilityZone: 'us-east-1b',
+    });
   });
 
   it('allows callers to override CIDR blocks and availability zones', () => {

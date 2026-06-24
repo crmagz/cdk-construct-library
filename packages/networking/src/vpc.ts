@@ -20,8 +20,7 @@ const DEFAULT_CIDR = '10.0.0.0/16';
 const DEFAULT_PUBLIC_CIDR_MASK = 26;
 const DEFAULT_PRIVATE_CIDR_MASK = 20;
 const DEFAULT_DATA_CIDR_MASK = 24;
-const DEFAULT_PROD_MAX_AZS = 3;
-const DEFAULT_NON_PROD_MAX_AZS = 2;
+const DEFAULT_MAX_AZS = 3;
 const DEFAULT_PROD_NAT_GATEWAYS = 2;
 const DEFAULT_NON_PROD_NAT_GATEWAYS = 1;
 const DEFAULT_AVAILABILITY_ZONE_SUFFIXES = ['a', 'b', 'c'] as const;
@@ -51,7 +50,7 @@ const defaultsForEnvironment = (props: NetworkingVpcProps): NetworkingVpcDefault
     availabilityZones: environment.region
       ? DEFAULT_AVAILABILITY_ZONE_SUFFIXES.map((suffix) => `${environment.region}${suffix}`)
       : undefined,
-    maxAzs: isProductionEnvironment(environment) ? DEFAULT_PROD_MAX_AZS : DEFAULT_NON_PROD_MAX_AZS,
+    maxAzs: DEFAULT_MAX_AZS,
     natGateways: isProductionEnvironment(environment)
       ? DEFAULT_PROD_NAT_GATEWAYS
       : DEFAULT_NON_PROD_NAT_GATEWAYS,
@@ -63,16 +62,27 @@ const resolveAvailabilityZones = (
   props: NetworkingVpcProps,
   defaults: NetworkingVpcDefaults,
 ): readonly string[] | undefined => {
-  return props.availabilityZones ? [...props.availabilityZones] : defaults.availabilityZones;
+  if (props.availabilityZones) {
+    return [...props.availabilityZones];
+  }
+
+  const maxAzs = props.maxAzs ?? defaults.maxAzs;
+
+  if (!defaults.availabilityZones || maxAzs > defaults.availabilityZones.length) {
+    return undefined;
+  }
+
+  return defaults.availabilityZones.slice(0, maxAzs);
 };
 
 const createVpcProps = (props: NetworkingVpcProps, defaults: NetworkingVpcDefaults): VpcProps => {
   const availabilityZones = resolveAvailabilityZones(props, defaults);
+  const maxAzs = props.maxAzs ?? defaults.maxAzs;
 
   return {
     vpcName: props.vpcName,
     ipAddresses: props.ipAddresses ?? IpAddresses.cidr(props.cidrBlock ?? DEFAULT_CIDR),
-    maxAzs: availabilityZones ? undefined : (props.maxAzs ?? defaults.maxAzs),
+    maxAzs: availabilityZones ? undefined : maxAzs,
     availabilityZones: availabilityZones ? [...availabilityZones] : undefined,
     natGateways: props.natGateways ?? defaults.natGateways,
     subnetConfiguration: props.subnetConfiguration

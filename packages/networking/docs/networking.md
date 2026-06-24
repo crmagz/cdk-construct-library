@@ -6,11 +6,11 @@ The networking package provides reusable AWS networking constructs for VPCs, sub
 
 `NetworkingVpc` creates a VPC with environment-aware defaults:
 
-- production: three Availability Zones and two NAT gateways
-- non-production: two Availability Zones and one NAT gateway
+- Availability Zones: three by default for every environment
+- NAT gateways: two in production and one in non-production
 - subnet groups: public, private-with-egress, and data
 - default CIDR: `10.0.0.0/16`
-- default Availability Zones: the configured region's `a`, `b`, and `c` zones
+- default Availability Zones: the configured region's `a`, `b`, and `c` zones, unless `availabilityZones` or `maxAzs` is overridden
 - public subnet mask: `/26`
 - private subnet mask: `/20`
 - data subnet mask: `/24`

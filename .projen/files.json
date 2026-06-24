@@ -29,6 +29,7 @@
     "packages/eks/tsconfig.json",
     "packages/elasticache/tsconfig.json",
     "packages/iam/tsconfig.json",
+    "packages/networking/tsconfig.json",
     "packages/opensearch/tsconfig.json",
     "packages/s3/tsconfig.json",
     "packages/sqs/tsconfig.json",

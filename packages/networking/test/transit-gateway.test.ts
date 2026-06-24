@@ -20,7 +20,7 @@ const createAttachmentVpc = (stack: Stack): NetworkingVpc => {
     subnetConfiguration: [
       {
         cidrMask: 24,
-        name: 'isolated',
+        name: 'data',
         subnetType: SubnetType.PRIVATE_ISOLATED,
       },
     ],

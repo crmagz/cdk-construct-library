@@ -38,7 +38,8 @@ new TransitGateway(stack, 'Transit', {
 
 ## Defaults
 
-- Creates public, private-with-egress, and isolated subnet groups by default.
+- Creates public, private-with-egress, and data subnet groups by default.
+- Implements data subnets as isolated private subnets with no internet route.
 - Selects `a`, `b`, and `c` Availability Zones for the configured region by default.
 - Uses a `/16` VPC CIDR by default, with smaller public subnets and larger private subnets.
 - Enables VPC flow logs to CloudWatch Logs by default.

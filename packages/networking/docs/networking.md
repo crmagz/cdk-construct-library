@@ -8,12 +8,13 @@ The networking package provides reusable AWS networking constructs for VPCs, sub
 
 - production: three Availability Zones and two NAT gateways
 - non-production: two Availability Zones and one NAT gateway
-- subnet groups: public, private-with-egress, and isolated
+- subnet groups: public, private-with-egress, and data
 - default CIDR: `10.0.0.0/16`
 - default Availability Zones: the configured region's `a`, `b`, and `c` zones
 - public subnet mask: `/26`
 - private subnet mask: `/20`
-- isolated subnet mask: `/24`
+- data subnet mask: `/24`
+- data subnet routing: private isolated, with no NAT gateway or internet gateway route
 - VPC flow logs: enabled for all traffic
 - default security group: restricted
 
@@ -31,6 +32,7 @@ const network = new NetworkingVpc(stack, 'Network', {
 });
 
 network.vpc.privateSubnets;
+network.dataSubnets;
 ```
 
 Use `subnetConfiguration`, `maxAzs`, and `natGateways` for normal customization. Use `vpcOverrides` only when you need a direct CDK escape hatch.
@@ -69,4 +71,4 @@ new TransitGateway(stack, 'Transit', {
 });
 ```
 
-VPC attachments select private-with-egress subnets first, isolated subnets second, and public subnets only when neither private subnet group exists. Pass `subnets` or `subnetIds` to make attachment placement explicit.
+VPC attachments select private-with-egress subnets first, data subnets second, and public subnets only when neither private subnet group exists. Pass `subnets` or `subnetIds` to make attachment placement explicit.

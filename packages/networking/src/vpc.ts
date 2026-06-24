@@ -6,7 +6,7 @@ import {
   SubnetType,
   Vpc,
 } from 'aws-cdk-lib/aws-ec2';
-import type { SubnetConfiguration, VpcProps } from 'aws-cdk-lib/aws-ec2';
+import type { ISubnet, SubnetConfiguration, VpcProps } from 'aws-cdk-lib/aws-ec2';
 import { Construct } from 'constructs';
 
 import type {
@@ -19,7 +19,7 @@ import type {
 const DEFAULT_CIDR = '10.0.0.0/16';
 const DEFAULT_PUBLIC_CIDR_MASK = 26;
 const DEFAULT_PRIVATE_CIDR_MASK = 20;
-const DEFAULT_ISOLATED_CIDR_MASK = 24;
+const DEFAULT_DATA_CIDR_MASK = 24;
 const DEFAULT_PROD_MAX_AZS = 3;
 const DEFAULT_NON_PROD_MAX_AZS = 2;
 const DEFAULT_PROD_NAT_GATEWAYS = 2;
@@ -38,8 +38,8 @@ const defaultSubnetConfiguration = (): SubnetConfiguration[] => [
     subnetType: SubnetType.PRIVATE_WITH_EGRESS,
   },
   {
-    cidrMask: DEFAULT_ISOLATED_CIDR_MASK,
-    name: 'isolated',
+    cidrMask: DEFAULT_DATA_CIDR_MASK,
+    name: 'data',
     subnetType: SubnetType.PRIVATE_ISOLATED,
   },
 ];
@@ -93,6 +93,7 @@ const createVpcProps = (props: NetworkingVpcProps, defaults: NetworkingVpcDefaul
 
 export class NetworkingVpc extends Construct {
   public readonly vpc: Vpc;
+  public readonly dataSubnets: readonly ISubnet[];
 
   public constructor(scope: Construct, id: string, props: NetworkingVpcProps) {
     super(scope, id);
@@ -104,6 +105,7 @@ export class NetworkingVpc extends Construct {
     });
 
     this.vpc = resources.vpc;
+    this.dataSubnets = resources.dataSubnets;
   }
 }
 
@@ -114,7 +116,10 @@ export const createNetworkingVpcResource = (
   const defaults = defaultsForEnvironment(props);
   const vpc = new Vpc(scope, `${id}Vpc`, createVpcProps(props, defaults));
 
-  return { vpc };
+  return {
+    vpc,
+    dataSubnets: vpc.isolatedSubnets,
+  };
 };
 
 export const createNetworkingVpc = (
@@ -126,5 +131,6 @@ export const createNetworkingVpc = (
 
   return {
     vpc: networkingVpc.vpc,
+    dataSubnets: networkingVpc.dataSubnets,
   };
 };

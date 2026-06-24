@@ -12,7 +12,7 @@ const prodEnv = {
 };
 
 describe('NetworkingVpc', () => {
-  it('synthesizes production VPC defaults with public, private, and isolated subnets', () => {
+  it('synthesizes production VPC defaults with public, private, and data subnets', () => {
     const stack = new Stack(undefined, 'NetworkingVpcStack', {
       env: {
         account: prodEnv.account,
@@ -28,6 +28,8 @@ describe('NetworkingVpc', () => {
     expect(networking.vpc.publicSubnets).toHaveLength(3);
     expect(networking.vpc.privateSubnets).toHaveLength(3);
     expect(networking.vpc.isolatedSubnets).toHaveLength(3);
+    expect(networking.dataSubnets).toHaveLength(3);
+    expect(networking.dataSubnets).toEqual(networking.vpc.isolatedSubnets);
 
     const template = Template.fromStack(stack);
     template.hasResourceProperties('AWS::EC2::VPC', {
@@ -63,6 +65,19 @@ describe('NetworkingVpc', () => {
         }),
       ]),
     });
+    template.hasResourceProperties('AWS::EC2::Subnet', {
+      AvailabilityZone: 'us-east-1a',
+      Tags: Match.arrayWith([
+        Match.objectLike({
+          Key: 'aws-cdk:subnet-name',
+          Value: 'data',
+        }),
+        Match.objectLike({
+          Key: 'aws-cdk:subnet-type',
+          Value: 'Isolated',
+        }),
+      ]),
+    });
     template.hasResourceProperties('AWS::EC2::FlowLog', {
       ResourceType: 'VPC',
       TrafficType: 'ALL',
@@ -73,20 +88,22 @@ describe('NetworkingVpc', () => {
   it('allows custom subnet layout and non-production capacity overrides', () => {
     const stack = new Stack();
 
-    const { vpc } = createNetworkingVpc(stack, 'Network', {
+    const { dataSubnets, vpc } = createNetworkingVpc(stack, 'Network', {
       env: { name: EnvironmentName.DEV },
       vpcName: 'shared-network-dev',
       natGateways: 0,
       subnetConfiguration: [
         {
           cidrMask: 24,
-          name: 'isolated',
+          name: 'data',
           subnetType: SubnetType.PRIVATE_ISOLATED,
         },
       ],
     });
 
     expect(vpc.isolatedSubnets).toHaveLength(2);
+    expect(dataSubnets).toHaveLength(2);
+    expect(dataSubnets).toEqual(vpc.isolatedSubnets);
     expect(vpc.privateSubnets).toHaveLength(0);
     expect(vpc.publicSubnets).toHaveLength(0);
 

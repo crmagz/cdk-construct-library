@@ -7,6 +7,7 @@ import type {
   FlowLogOptions,
   IIpAddresses,
   IVpc,
+  ISubnet,
   SubnetSelection,
   SubnetConfiguration,
   Vpc,
@@ -35,6 +36,7 @@ export type NetworkingVpcDefaults = {
 
 export type NetworkingVpcResources = {
   readonly vpc: Vpc;
+  readonly dataSubnets: readonly ISubnet[];
 };
 
 export type CreateNetworkingVpcResourceProps = {

@@ -36,3 +36,37 @@ network.vpc.privateSubnets;
 Use `subnetConfiguration`, `maxAzs`, and `natGateways` for normal customization. Use `vpcOverrides` only when you need a direct CDK escape hatch.
 
 Pass `cidrBlock`, `ipAddresses`, or `availabilityZones` when the consuming stack owns those placement choices.
+
+## Transit Gateways
+
+`TransitGateway` creates an `AWS::EC2::TransitGateway` with conservative attachment and routing defaults:
+
+- shared attachment auto-accept disabled
+- default route table association disabled
+- default route table propagation disabled
+- DNS support enabled
+- VPN ECMP support enabled
+- encryption support enabled
+- security group referencing enabled
+
+```ts
+import { TransitGateway } from '@cdk-construct/networking';
+
+new TransitGateway(stack, 'Transit', {
+  transitGatewayName: 'core-network-prod',
+  env: {
+    name: EnvironmentName.PROD,
+    account: '123456789012',
+    region: 'us-east-1',
+  },
+  vpcAttachments: [
+    {
+      id: 'ApplicationAttachment',
+      attachmentName: 'application-network-prod',
+      vpc: network.vpc,
+    },
+  ],
+});
+```
+
+VPC attachments select private-with-egress subnets first, isolated subnets second, and public subnets only when neither private subnet group exists. Pass `subnets` or `subnetIds` to make attachment placement explicit.

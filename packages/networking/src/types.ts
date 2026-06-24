@@ -1,7 +1,13 @@
 import type { CdkOverrides, EnvironmentAwareProps } from '@cdk-construct/core';
 import type {
+  CfnTransitGateway,
+  CfnTransitGatewayProps,
+  CfnTransitGatewayVpcAttachment,
+  CfnTransitGatewayVpcAttachmentProps,
   FlowLogOptions,
   IIpAddresses,
+  IVpc,
+  SubnetSelection,
   SubnetConfiguration,
   Vpc,
   VpcProps,
@@ -35,4 +41,34 @@ export type CreateNetworkingVpcResourceProps = {
   readonly scope: Construct;
   readonly id: string;
   readonly props: NetworkingVpcProps;
+};
+
+export type TransitGatewayVpcAttachmentConfig = {
+  readonly id: string;
+  readonly attachmentName?: string;
+  readonly vpc: IVpc;
+  readonly subnets?: SubnetSelection;
+  readonly subnetIds?: readonly string[];
+  readonly options?: CfnTransitGatewayVpcAttachment.OptionsProperty;
+  readonly attachmentOverrides?: CdkOverrides<CfnTransitGatewayVpcAttachmentProps>;
+};
+
+export type TransitGatewayProps = EnvironmentAwareProps & {
+  readonly transitGatewayName: string;
+  readonly description?: string;
+  readonly amazonSideAsn?: number;
+  readonly transitGatewayCidrBlocks?: readonly string[];
+  readonly vpcAttachments?: readonly TransitGatewayVpcAttachmentConfig[];
+  readonly transitGatewayOverrides?: CdkOverrides<CfnTransitGatewayProps>;
+};
+
+export type TransitGatewayResources = {
+  readonly transitGateway: CfnTransitGateway;
+  readonly vpcAttachments: readonly CfnTransitGatewayVpcAttachment[];
+};
+
+export type CreateTransitGatewayResourceProps = {
+  readonly scope: Construct;
+  readonly id: string;
+  readonly props: TransitGatewayProps;
 };

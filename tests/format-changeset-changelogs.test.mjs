@@ -66,6 +66,61 @@ test('formats changeset semver sections into conventional commit categories', ()
   );
 });
 
+test('adds package metadata and installation details to generated release sections', () => {
+  const source = [
+    '# @cdk-construct/sqs',
+    '',
+    '## 0.2.1',
+    '',
+    '### Minor Changes',
+    '',
+    '- feat(sqs): add queue construct ([56d16f4](https://github.com/crmagz/cdk-construct-library/commit/56d16f4)) by [@crmagz](https://github.com/crmagz)',
+    '',
+    '### Patch Changes',
+    '',
+    '- fix(sqs): validate queue redrive configuration ([9fa04f8](https://github.com/crmagz/cdk-construct-library/commit/9fa04f8)) by [@crmagz](https://github.com/crmagz)',
+    '- chore(sqs): validate release flow ([d2ae41b](https://github.com/crmagz/cdk-construct-library/commit/d2ae41b)) by [@crmagz](https://github.com/crmagz)',
+    '',
+  ].join('\n');
+
+  assert.equal(
+    formatChangelog(source, {
+      authorSlug: 'crmagz',
+      packageName: '@cdk-construct/sqs',
+      publishedDate: '2026-06-24',
+    }),
+    [
+      '# @cdk-construct/sqs',
+      '',
+      '## 0.2.1',
+      '',
+      'Package: `@cdk-construct/sqs`',
+      'Version: `0.2.1`',
+      'Published: 2026-06-24',
+      'Author: [@crmagz](https://github.com/crmagz)',
+      '',
+      '### Features',
+      '',
+      '- feat(sqs): add queue construct ([56d16f4](https://github.com/crmagz/cdk-construct-library/commit/56d16f4)) by [@crmagz](https://github.com/crmagz)',
+      '',
+      '### Bug Fixes',
+      '',
+      '- fix(sqs): validate queue redrive configuration ([9fa04f8](https://github.com/crmagz/cdk-construct-library/commit/9fa04f8)) by [@crmagz](https://github.com/crmagz)',
+      '',
+      '### Maintenance',
+      '',
+      '- chore(sqs): validate release flow ([d2ae41b](https://github.com/crmagz/cdk-construct-library/commit/d2ae41b)) by [@crmagz](https://github.com/crmagz)',
+      '',
+      '### Installation',
+      '',
+      '```sh',
+      'npm install @cdk-construct/sqs@0.2.1',
+      '```',
+      '',
+    ].join('\n'),
+  );
+});
+
 test('leaves changelog content without changeset semver headings unchanged', () => {
   const source = [
     '# @cdk-construct/core',
@@ -151,8 +206,6 @@ test('preserves non-generated changelog text after changeset sections', () => {
       '### Other Changes',
       '',
       '- abc1234: Validate the SQS package changelog and release flow with Changesets.',
-      '',
-      'All notable changes to `sqs` will be documented here.',
       '',
       '## [0.1.0] - 2026-06-13',
       '',

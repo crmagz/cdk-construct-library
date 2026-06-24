@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 const semverHeadingPattern = /^### (Major|Minor|Patch) Changes$/;
 const versionHeadingPattern = /^## /;
 const commitHashLinePattern = /^-\s+(?<commit>[a-f0-9]{7,40}):\s+/;
+const versionPattern = /^##\s+(?:\[(?<bracketVersion>[^\]]+)\]|(?<plainVersion>\S+))/;
 const execFileAsync = promisify(execFile);
 
 const categoryOrder = [
@@ -27,6 +28,11 @@ const categoryOrder = [
 const conventionalTypePattern = /^-\s+(?<type>[a-z]+)(?:\([^)]+\))?(?<breaking>!)?:\s+/;
 const packageScopedCommitPattern = /^-\s+(?<type>[a-z]+)\((?<scope>[^)]+)\)(?<breaking>!)?:\s+/;
 const repoMaintenanceScopes = new Set(['build', 'npm', 'projen', 'release', 'repo']);
+const boilerplatePatterns = [
+  /^All notable changes to `?[^`]+`? will be documented here\.$/,
+  /^The format is based on \[Keep a Changelog\]\(https:\/\/keepachangelog\.com\/\)\.$/,
+  /^Changesets updates this changelog and the package version during release\.$/,
+];
 
 const categoryByType = {
   feat: 'Features',
@@ -85,6 +91,77 @@ const normalizeEntry = (entry, commitSubjects) => {
     ...entry,
     lines: [`- ${commitSubject}`, ...entry.lines.slice(1)],
   };
+};
+
+const parseVersion = (heading) => {
+  const match = versionPattern.exec(heading);
+
+  return match?.groups?.bracketVersion ?? match?.groups?.plainVersion;
+};
+
+const formatAuthor = (authorSlug) =>
+  authorSlug ? `Author: [@${authorSlug}](https://github.com/${authorSlug})` : undefined;
+
+const formatMetadata = ({ authorSlug, packageName, publishedDate, version }) => {
+  if (!packageName || !version) {
+    return [];
+  }
+
+  return [
+    `Package: \`${packageName}\``,
+    `Version: \`${version}\``,
+    publishedDate ? `Published: ${publishedDate}` : undefined,
+    formatAuthor(authorSlug),
+  ].filter((line) => line !== undefined);
+};
+
+const formatInstallation = ({ packageName, version }) => {
+  if (!packageName || !version) {
+    return [];
+  }
+
+  return ['### Installation', '', '```sh', `npm install ${packageName}@${version}`, '```'];
+};
+
+const formatMetadataAndInstallation = (options, version) => ({
+  installation: formatInstallation({
+    packageName: options.packageName,
+    version,
+  }).join('\n'),
+  metadata: formatMetadata({
+    authorSlug: options.authorSlug,
+    packageName: options.packageName,
+    publishedDate: options.publishedDate,
+    version,
+  }).join('\n'),
+});
+
+const isBoilerplateLine = (line) => boilerplatePatterns.some((pattern) => pattern.test(line));
+
+const cleanPassthroughLines = (lines) => {
+  const cleaned = [];
+
+  for (const line of lines) {
+    if (isBoilerplateLine(line.trim())) {
+      continue;
+    }
+
+    if (line.trim() === '' && cleaned.at(-1)?.trim() === '') {
+      continue;
+    }
+
+    cleaned.push(line);
+  }
+
+  while (cleaned.at(0)?.trim() === '') {
+    cleaned.shift();
+  }
+
+  while (cleaned.at(-1)?.trim() === '') {
+    cleaned.pop();
+  }
+
+  return cleaned;
 };
 
 const splitVersionSections = (source) => {
@@ -161,7 +238,8 @@ const extractSemverEntries = (lines) => {
   };
 };
 
-const formatVersionSection = (lines, commitSubjects) => {
+const formatVersionSection = (lines, options) => {
+  const commitSubjects = options.commitSubjects ?? new Map();
   const { entries, passthroughLines, sawSemverHeading } = extractSemverEntries(lines);
 
   if (!sawSemverHeading || entries.length === 0) {
@@ -186,16 +264,25 @@ const formatVersionSection = (lines, commitSubjects) => {
     })
     .filter(Boolean);
 
-  const passthrough = passthroughLines.join('\n').trimEnd();
+  const version = parseVersion(lines[0]);
+  const { installation, metadata } = formatMetadataAndInstallation(options, version);
+  const passthrough = cleanPassthroughLines(passthroughLines).join('\n').trimEnd();
 
-  return `${[lines[0], ...formattedGroups, passthrough].filter(Boolean).join('\n\n')}\n`;
+  return `${[lines[0], metadata, ...formattedGroups, installation, passthrough]
+    .filter(Boolean)
+    .join('\n\n')}\n`;
 };
 
 export const formatChangelog = (source, options = {}) => {
-  const commitSubjects = options.commitSubjects ?? new Map();
+  const formatterOptions = {
+    authorSlug: options.authorSlug ?? 'crmagz',
+    commitSubjects: options.commitSubjects ?? new Map(),
+    packageName: options.packageName,
+    publishedDate: options.publishedDate ?? new Date().toISOString().slice(0, 10),
+  };
 
   return splitVersionSections(source)
-    .map((section) => formatVersionSection(section, commitSubjects))
+    .map((section) => formatVersionSection(section, formatterOptions))
     .join('\n');
 };
 
@@ -242,8 +329,15 @@ const findChangedPackageChangelogs = async (root) => {
 
 export const formatChangelogFile = async (filePath) => {
   const source = await readFile(filePath, 'utf8');
+  const packageJson = JSON.parse(
+    await readFile(path.join(path.dirname(filePath), 'package.json'), 'utf8'),
+  );
   const commitSubjects = await resolveCommitSubjects(extractCommitHashes(source));
-  const formatted = formatChangelog(source, { commitSubjects });
+  const formatted = formatChangelog(source, {
+    authorSlug: packageJson.author?.name?.replace(/^@/, ''),
+    commitSubjects,
+    packageName: packageJson.name,
+  });
 
   if (formatted !== source) {
     await writeFile(filePath, formatted, 'utf8');

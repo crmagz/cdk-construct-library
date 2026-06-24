@@ -43,6 +43,26 @@ describe('NetworkingVpc', () => {
     });
     template.resourceCountIs('AWS::EC2::NatGateway', 2);
     template.resourceCountIs('AWS::EC2::Subnet', 9);
+    template.hasResourceProperties('AWS::EC2::Subnet', {
+      AvailabilityZone: 'us-east-1a',
+      CidrBlock: '10.0.0.0/26',
+      Tags: Match.arrayWith([
+        Match.objectLike({
+          Key: 'aws-cdk:subnet-type',
+          Value: 'Public',
+        }),
+      ]),
+    });
+    template.hasResourceProperties('AWS::EC2::Subnet', {
+      AvailabilityZone: 'us-east-1a',
+      CidrBlock: '10.0.16.0/20',
+      Tags: Match.arrayWith([
+        Match.objectLike({
+          Key: 'aws-cdk:subnet-type',
+          Value: 'Private',
+        }),
+      ]),
+    });
     template.hasResourceProperties('AWS::EC2::FlowLog', {
       ResourceType: 'VPC',
       TrafficType: 'ALL',
@@ -71,5 +91,31 @@ describe('NetworkingVpc', () => {
     expect(vpc.publicSubnets).toHaveLength(0);
 
     Template.fromStack(stack).resourceCountIs('AWS::EC2::NatGateway', 0);
+  });
+
+  it('allows callers to override CIDR blocks and availability zones', () => {
+    const stack = new Stack();
+
+    const { vpc } = createNetworkingVpc(stack, 'Network', {
+      env: prodEnv,
+      vpcName: 'custom-network-prod',
+      cidrBlock: '10.40.0.0/16',
+      availabilityZones: ['us-east-1b', 'us-east-1d'],
+      natGateways: 0,
+    });
+
+    expect(vpc.availabilityZones).toEqual(['us-east-1b', 'us-east-1d']);
+
+    const template = Template.fromStack(stack);
+    template.hasResourceProperties('AWS::EC2::VPC', {
+      CidrBlock: '10.40.0.0/16',
+    });
+    template.resourceCountIs('AWS::EC2::Subnet', 6);
+    template.hasResourceProperties('AWS::EC2::Subnet', {
+      AvailabilityZone: 'us-east-1b',
+    });
+    template.hasResourceProperties('AWS::EC2::Subnet', {
+      AvailabilityZone: 'us-east-1d',
+    });
   });
 });

@@ -30,6 +30,8 @@ new NetworkingVpc(stack, 'Network', {
 ## Defaults
 
 - Creates public, private-with-egress, and isolated subnet groups by default.
+- Selects `a`, `b`, and `c` Availability Zones for the configured region by default.
+- Uses a `/16` VPC CIDR by default, with smaller public subnets and larger private subnets.
 - Enables VPC flow logs to CloudWatch Logs by default.
 - Restricts the default security group.
 - Uses production-oriented defaults with three Availability Zones and two NAT gateways.

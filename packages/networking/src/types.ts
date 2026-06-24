@@ -10,8 +10,10 @@ import type { Construct } from 'constructs';
 
 export type NetworkingVpcProps = EnvironmentAwareProps & {
   readonly vpcName: string;
+  readonly cidrBlock?: string;
   readonly ipAddresses?: IIpAddresses;
   readonly maxAzs?: number;
+  readonly availabilityZones?: readonly string[];
   readonly natGateways?: number;
   readonly subnetConfiguration?: readonly SubnetConfiguration[];
   readonly flowLogs?: Record<string, FlowLogOptions>;
@@ -19,6 +21,7 @@ export type NetworkingVpcProps = EnvironmentAwareProps & {
 };
 
 export type NetworkingVpcDefaults = {
+  readonly availabilityZones?: readonly string[];
   readonly maxAzs: number;
   readonly natGateways: number;
   readonly subnetConfiguration: readonly SubnetConfiguration[];

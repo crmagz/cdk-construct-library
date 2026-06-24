@@ -1,13 +1,44 @@
 # @cdk-construct/eks
 
+## 0.2.0
+
+Package: `@cdk-construct/eks`
+Version: `0.2.0`
+Published: 2026-06-24
+Author: [@crmagz](https://github.com/crmagz)
+
+### Features
+
+- feat(eks): expose conventional release-note metadata ([ffc8ff9](https://github.com/crmagz/cdk-construct-library/commit/ffc8ff911b2eb871c3a101a609781ca98f5fc762)) by [@crmagz](https://github.com/crmagz)
+
+### Installation
+
+```sh
+npm install @cdk-construct/eks@0.2.0
+```
+
 ## 0.1.0
 
-### Minor Changes
+Package: `@cdk-construct/eks`
+Version: `0.1.0`
+Published: 2026-06-24
+Author: [@crmagz](https://github.com/crmagz)
 
-- 94ebcd7: Validate the EKS package changelog and release flow with Changesets.
-- cd99213: Add a release preview feature marker for the EKS package.
+### Features
 
-### Patch Changes
+- feat(eks): add workspace package
+- feat(eks): add release preview marker
 
-- c0bbd6c: Freeze the EKS package metadata object to avoid repeated defensive copies.
-- e52023e: Correct the EKS package service display name used by preview metadata.
+### Bug Fixes
+
+- fix(eks): correct release preview service name
+
+### Performance
+
+- perf(eks): freeze package metadata
+
+### Installation
+
+```sh
+npm install @cdk-construct/eks@0.1.0
+```

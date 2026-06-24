@@ -16,6 +16,26 @@ import type {
 const ENABLED = 'enable';
 const DISABLED = 'disable';
 
+const isBlank = (value: string): boolean => value.trim().length === 0;
+
+const validateTransitGatewayProps = (props: TransitGatewayProps): void => {
+  if (isBlank(props.transitGatewayName)) {
+    throw new Error('TransitGateway transitGatewayName must not be empty.');
+  }
+
+  props.vpcAttachments?.forEach((attachment) => {
+    if (isBlank(attachment.id)) {
+      throw new Error('TransitGateway VPC attachment id must not be empty.');
+    }
+
+    if (attachment.subnetIds !== undefined && attachment.subnets !== undefined) {
+      throw new Error(
+        `Transit gateway attachment ${attachment.id} cannot specify both subnetIds and subnets.`,
+      );
+    }
+  });
+};
+
 const defaultTransitGatewayProps = (props: TransitGatewayProps): CfnTransitGatewayProps => {
   return {
     amazonSideAsn: props.amazonSideAsn,
@@ -124,6 +144,8 @@ export const createTransitGatewayResource = (
   resourceProps: CreateTransitGatewayResourceProps,
 ): TransitGatewayResources => {
   const { scope, id, props } = resourceProps;
+  validateTransitGatewayProps(props);
+
   const transitGateway = new CfnTransitGateway(
     scope,
     `${id}TransitGateway`,

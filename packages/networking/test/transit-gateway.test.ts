@@ -113,4 +113,55 @@ describe('TransitGateway', () => {
       });
     }).toThrow('Transit gateway attachment ApplicationAttachment requires at least one subnet.');
   });
+
+  it('requires a non-empty transit gateway name', () => {
+    const stack = new Stack();
+
+    expect(() => {
+      new TransitGateway(stack, 'Transit', {
+        env: prodEnv,
+        transitGatewayName: ' ',
+      });
+    }).toThrow('TransitGateway transitGatewayName must not be empty.');
+  });
+
+  it('requires non-empty VPC attachment IDs', () => {
+    const stack = new Stack();
+    const network = createAttachmentVpc(stack);
+
+    expect(() => {
+      new TransitGateway(stack, 'Transit', {
+        env: prodEnv,
+        transitGatewayName: 'core-network-prod',
+        vpcAttachments: [
+          {
+            id: '',
+            vpc: network.vpc,
+          },
+        ],
+      });
+    }).toThrow('TransitGateway VPC attachment id must not be empty.');
+  });
+
+  it('rejects VPC attachments with conflicting subnet selectors', () => {
+    const stack = new Stack();
+    const network = createAttachmentVpc(stack);
+
+    expect(() => {
+      new TransitGateway(stack, 'Transit', {
+        env: prodEnv,
+        transitGatewayName: 'core-network-prod',
+        vpcAttachments: [
+          {
+            id: 'ApplicationAttachment',
+            vpc: network.vpc,
+            subnetIds: ['subnet-12345'],
+            subnets: { subnetType: SubnetType.PRIVATE_ISOLATED },
+          },
+        ],
+      });
+    }).toThrow(
+      'Transit gateway attachment ApplicationAttachment cannot specify both subnetIds and subnets.',
+    );
+  });
 });

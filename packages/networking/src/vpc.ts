@@ -58,6 +58,20 @@ const defaultsForEnvironment = (props: NetworkingVpcProps): NetworkingVpcDefault
   };
 };
 
+const validateNetworkingVpcProps = (props: NetworkingVpcProps): void => {
+  if (props.cidrBlock !== undefined && props.ipAddresses !== undefined) {
+    throw new Error('NetworkingVpc cannot specify both cidrBlock and ipAddresses.');
+  }
+
+  if (props.maxAzs !== undefined && (!Number.isInteger(props.maxAzs) || props.maxAzs < 1)) {
+    throw new Error('NetworkingVpc maxAzs must be a positive integer.');
+  }
+
+  if (props.availabilityZones !== undefined && props.availabilityZones.length === 0) {
+    throw new Error('NetworkingVpc availabilityZones must include at least one zone.');
+  }
+};
+
 const resolveAvailabilityZones = (
   props: NetworkingVpcProps,
   defaults: NetworkingVpcDefaults,
@@ -123,6 +137,8 @@ export const createNetworkingVpcResource = (
   resourceProps: CreateNetworkingVpcResourceProps,
 ): NetworkingVpcResources => {
   const { scope, id, props } = resourceProps;
+  validateNetworkingVpcProps(props);
+
   const defaults = defaultsForEnvironment(props);
   const vpc = new Vpc(scope, `${id}Vpc`, createVpcProps(props, defaults));
 

@@ -1,7 +1,7 @@
 import { EnvironmentName } from '@cdk-construct/core';
 import { Stack } from 'aws-cdk-lib';
 import { Match, Template } from 'aws-cdk-lib/assertions';
-import { SubnetType } from 'aws-cdk-lib/aws-ec2';
+import { IpAddresses, SubnetType } from 'aws-cdk-lib/aws-ec2';
 
 import { NetworkingVpc, createNetworkingVpc } from '../src/index.js';
 
@@ -157,5 +157,38 @@ describe('NetworkingVpc', () => {
     template.hasResourceProperties('AWS::EC2::Subnet', {
       AvailabilityZone: 'us-east-1d',
     });
+  });
+
+  it('rejects conflicting CIDR configuration', () => {
+    const stack = new Stack();
+
+    expect(() => {
+      createNetworkingVpc(stack, 'Network', {
+        env: prodEnv,
+        vpcName: 'invalid-network-prod',
+        cidrBlock: '10.40.0.0/16',
+        ipAddresses: IpAddresses.cidr('10.41.0.0/16'),
+      });
+    }).toThrow('NetworkingVpc cannot specify both cidrBlock and ipAddresses.');
+  });
+
+  it('rejects invalid availability zone capacity settings', () => {
+    const stack = new Stack();
+
+    expect(() => {
+      createNetworkingVpc(stack, 'ZeroAzNetwork', {
+        env: prodEnv,
+        vpcName: 'zero-az-network-prod',
+        maxAzs: 0,
+      });
+    }).toThrow('NetworkingVpc maxAzs must be a positive integer.');
+
+    expect(() => {
+      createNetworkingVpc(stack, 'EmptyAzNetwork', {
+        env: prodEnv,
+        vpcName: 'empty-az-network-prod',
+        availabilityZones: [],
+      });
+    }).toThrow('NetworkingVpc availabilityZones must include at least one zone.');
   });
 });

@@ -23,14 +23,28 @@ const validateTransitGatewayProps = (props: TransitGatewayProps): void => {
     throw new Error('TransitGateway transitGatewayName must not be empty.');
   }
 
+  const attachmentIds = new Set<string>();
+
   props.vpcAttachments?.forEach((attachment) => {
     if (isBlank(attachment.id)) {
       throw new Error('TransitGateway VPC attachment id must not be empty.');
     }
 
+    if (attachmentIds.has(attachment.id)) {
+      throw new Error(`TransitGateway VPC attachment id ${attachment.id} must be unique.`);
+    }
+
+    attachmentIds.add(attachment.id);
+
     if (attachment.subnetIds !== undefined && attachment.subnets !== undefined) {
       throw new Error(
         `Transit gateway attachment ${attachment.id} cannot specify both subnetIds and subnets.`,
+      );
+    }
+
+    if (attachment.subnetIds?.some((subnetId) => isBlank(subnetId)) === true) {
+      throw new Error(
+        `Transit gateway attachment ${attachment.id} subnetIds must not contain empty values.`,
       );
     }
   });

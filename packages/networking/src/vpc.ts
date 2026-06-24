@@ -59,8 +59,16 @@ const defaultsForEnvironment = (props: NetworkingVpcProps): NetworkingVpcDefault
 };
 
 const validateNetworkingVpcProps = (props: NetworkingVpcProps): void => {
+  if (props.vpcName.trim().length === 0) {
+    throw new Error('NetworkingVpc vpcName must not be empty.');
+  }
+
   if (props.cidrBlock !== undefined && props.ipAddresses !== undefined) {
     throw new Error('NetworkingVpc cannot specify both cidrBlock and ipAddresses.');
+  }
+
+  if (props.availabilityZones !== undefined && props.maxAzs !== undefined) {
+    throw new Error('NetworkingVpc cannot specify both availabilityZones and maxAzs.');
   }
 
   if (props.maxAzs !== undefined && (!Number.isInteger(props.maxAzs) || props.maxAzs < 1)) {

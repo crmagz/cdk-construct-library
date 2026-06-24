@@ -143,6 +143,28 @@ describe('TransitGateway', () => {
     }).toThrow('TransitGateway VPC attachment id must not be empty.');
   });
 
+  it('requires unique VPC attachment IDs', () => {
+    const stack = new Stack();
+    const network = createAttachmentVpc(stack);
+
+    expect(() => {
+      new TransitGateway(stack, 'Transit', {
+        env: prodEnv,
+        transitGatewayName: 'core-network-prod',
+        vpcAttachments: [
+          {
+            id: 'ApplicationAttachment',
+            vpc: network.vpc,
+          },
+          {
+            id: 'ApplicationAttachment',
+            vpc: network.vpc,
+          },
+        ],
+      });
+    }).toThrow('TransitGateway VPC attachment id ApplicationAttachment must be unique.');
+  });
+
   it('rejects VPC attachments with conflicting subnet selectors', () => {
     const stack = new Stack();
     const network = createAttachmentVpc(stack);
@@ -162,6 +184,27 @@ describe('TransitGateway', () => {
       });
     }).toThrow(
       'Transit gateway attachment ApplicationAttachment cannot specify both subnetIds and subnets.',
+    );
+  });
+
+  it('rejects VPC attachments with empty subnet IDs', () => {
+    const stack = new Stack();
+    const network = createAttachmentVpc(stack);
+
+    expect(() => {
+      new TransitGateway(stack, 'Transit', {
+        env: prodEnv,
+        transitGatewayName: 'core-network-prod',
+        vpcAttachments: [
+          {
+            id: 'ApplicationAttachment',
+            vpc: network.vpc,
+            subnetIds: ['subnet-12345', ' '],
+          },
+        ],
+      });
+    }).toThrow(
+      'Transit gateway attachment ApplicationAttachment subnetIds must not contain empty values.',
     );
   });
 });

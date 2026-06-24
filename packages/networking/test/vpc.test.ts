@@ -172,8 +172,28 @@ describe('NetworkingVpc', () => {
     }).toThrow('NetworkingVpc cannot specify both cidrBlock and ipAddresses.');
   });
 
+  it('requires a non-empty VPC name', () => {
+    const stack = new Stack();
+
+    expect(() => {
+      createNetworkingVpc(stack, 'Network', {
+        env: prodEnv,
+        vpcName: ' ',
+      });
+    }).toThrow('NetworkingVpc vpcName must not be empty.');
+  });
+
   it('rejects invalid availability zone capacity settings', () => {
     const stack = new Stack();
+
+    expect(() => {
+      createNetworkingVpc(stack, 'ConflictingAzNetwork', {
+        env: prodEnv,
+        vpcName: 'conflicting-az-network-prod',
+        availabilityZones: ['us-east-1a'],
+        maxAzs: 1,
+      });
+    }).toThrow('NetworkingVpc cannot specify both availabilityZones and maxAzs.');
 
     expect(() => {
       createNetworkingVpc(stack, 'ZeroAzNetwork', {

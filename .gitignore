@@ -70,6 +70,8 @@ junit.xml
 !/packages/elasticache/tsconfig.json
 !/packages/opensearch/package.json
 !/packages/opensearch/tsconfig.json
+!/packages/networking/package.json
+!/packages/networking/tsconfig.json
 !/.changeset/config.json
 !/.github/release.yml
 !/.github/workflows/release.yml

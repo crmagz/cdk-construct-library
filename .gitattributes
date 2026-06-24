@@ -44,6 +44,8 @@
 /packages/elasticache/tsconfig.json linguist-generated
 /packages/iam/package.json linguist-generated
 /packages/iam/tsconfig.json linguist-generated
+/packages/networking/package.json linguist-generated
+/packages/networking/tsconfig.json linguist-generated
 /packages/opensearch/package.json linguist-generated
 /packages/opensearch/tsconfig.json linguist-generated
 /packages/s3/package.json linguist-generated
